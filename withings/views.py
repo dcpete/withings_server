@@ -19,6 +19,8 @@ from zoneinfo import ZoneInfo
 
 DT_ACCEL=1 # accelerometer data_type = 1
 
+DEPLOY_PATH = settings.WEB_SERVER_DEPLOY_PATH
+
 def get_access_token(userid):
     users = UserInfo.objects.filter(userid=userid)
     if users.count() <= 0:
@@ -49,7 +51,9 @@ def rawdata_activate(access_token, hash_deviceid, data_type, end_ts):
 
 @csrf_exempt
 def callback2(request):
-    code = request.GET['code']
+    if request.method == "POST" or request.method == 'HEAD' or not request.GET.get('code'):
+        return HttpResponse("CSSM PAHP Callback")
+    code = request.GET.get('code')
 
     """
     Now, use this code to get access_token
@@ -91,7 +95,8 @@ def callback2(request):
         user.token_type = json_body["token_type"]
         user.save()
 
-    return JsonResponse(res_json)
+    #return JsonResponse(res_json)
+    return redirect(DEPLOY_PATH + "/experiments/")
 
 
 
@@ -159,7 +164,7 @@ def activate(request):
     else:
         return JsonResponse({"error":"access token experied"})
 
-    return redirect("/withings_experiments/")
+    return redirect(DEPLOY_PATH + "/experiments/")
 
 def getdevices(request):
     userid = request.GET['userid']
@@ -276,7 +281,7 @@ def get_rawdata(request):
         exp.download_offset = -1
         exp.save()
     
-    return redirect("/withings_experiments/")
+    return redirect(DEPLOY_PATH + "/experiments/")
 
 def list_heart(request):
     userid = request.GET['userid']
@@ -366,4 +371,4 @@ def withings_experiments(request):
         
         exp_list.append(record)
 
-    return render(request, "withings_experiments.html", {'exp_list': exp_list})
+    return render(request, "withings_experiments.html", {'exp_list': exp_list, 'deploy_path': DEPLOY_PATH})

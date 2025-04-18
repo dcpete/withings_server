@@ -30,13 +30,13 @@ router.register(r'experiment', withingsviews.ExperimentViewSet)
 router.register(r'rawdatarecord', withingsviews.RawdataRecordViewSet)
 
 urlpatterns = [
-    path('', include(router.urls)),
-    path('admin/', admin.site.urls),
-    path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),    
-    path('oauth2/', withingsviews.oauth2),
-    path('callback/', withingsviews.callback2),
-    path('getdevices/', withingsviews.getdevices),
-    path('getrawdata/', withingsviews.get_rawdata),
-    path('activate/', withingsviews.activate),
-    path("withings_experiments/", withingsviews.withings_experiments),
+    path('withings/', include(router.urls)),
+    path('withings/admin/', admin.site.urls),
+    path('withings/api-auth/', include('rest_framework.urls', namespace='rest_framework')),    
+    path('withings/oauth2/', withingsviews.oauth2),
+    path('withings/callback/', withingsviews.callback2),
+    path('withings/getdevices/', withingsviews.getdevices),
+    path('withings/getrawdata/', withingsviews.get_rawdata),
+    path('withings/activate/', withingsviews.activate),
+    path("withings/experiments/", withingsviews.withings_experiments),
 ]

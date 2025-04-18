@@ -1,0 +1,6 @@
+db.sqlite3
+files
+staticfiles
+**/__pycache__
+venv
+withingsenv
