@@ -19,7 +19,11 @@ from zoneinfo import ZoneInfo
 
 DT_ACCEL=1 # accelerometer data_type = 1
 
-DEPLOY_PATH = settings.WEB_SERVER_DEPLOY_PATH
+deploy_path = settings.WITHINGS_DEPLOY_PATH + '/'
+client_id = settings.WITHINGS_CLIENT_ID
+client_secret = settings.WITHINGS_CLIENT_SECRET
+redirect_uri = settings.WITHINGS_REDIRECT_URI
+
 
 def get_access_token(userid):
     users = UserInfo.objects.filter(userid=userid)
@@ -63,10 +67,10 @@ def callback2(request):
     params = {
             'action':'requesttoken',
             'grant_type':'authorization_code',
-            'client_id':'91eaaa60979afb77a65032a1b6019723351e6c5bde7827eb346de1c63aadb3ae',
-            'client_secret':'328d73c65daf6127de1b07b5a9b6ab0a6d7f6f2753e3d20c51607dfb161490b8',
+            'client_id':client_id,
+            'client_secret':client_secret,
             'code':code,
-            'redirect_uri':'http://withings.geosketch.art/callback/'
+            'redirect_uri':redirect_uri
             }
 
     data = {}
@@ -96,7 +100,7 @@ def callback2(request):
         user.save()
 
     #return JsonResponse(res_json)
-    return redirect(DEPLOY_PATH + "/experiments/")
+    return redirect('/' + deploy_path + "experiments/")
 
 
 
@@ -128,6 +132,10 @@ def notifyCallback(request):
 
         
 def activate(request):
+    required_params = ['userid', 'endtime']
+    for param in required_params:
+        if not request.GET.get(param):
+            return HttpResponse("Missing parameter: " + param, 400)
     userid = request.GET['userid']
     #hash_deviceid = request.GET['hdeviceid']
     #data_type = request.GET['dtype']
@@ -316,9 +324,17 @@ def oauth2(request):
     url = 'https://account.withings.com/oauth2_user/authorize2'
     params = {
                 'response_type':'code',
-                'client_id':'91eaaa60979afb77a65032a1b6019723351e6c5bde7827eb346de1c63aadb3ae',
+                # dcp
+                #'client_id':'b007216a30ef05a7460e943097f24a4057c019a5de35af805d2dcedafe406825',
+                'client_id':client_id,
+                # pahplabresearch1
+                #'client_id':'feff00522ffdd5d90227173d55c4487861349473f070a4e52985910cfd878bf0',
+                # south carolina
+                #'client_id':'91eaaa60979afb77a65032a1b6019723351e6c5bde7827eb346de1c63aadb3ae',
                 'scope':'user.info,user.metrics,user.activity,user.rawdata',
-                'redirect_uri':'http://withings.geosketch.art/callback/',
+                'redirect_uri':redirect_uri,
+                #'redirect_uri':'https://pahplab.cssm.iastate.edu/withings/callback/',
+                #'redirect_uri':'http://withings.geosketch.art/callback/',
                 'state':'VA'}
     
     oauth2_url = '%s?%s' % (url,urlencode(params))
@@ -371,4 +387,4 @@ def withings_experiments(request):
         
         exp_list.append(record)
 
-    return render(request, "withings_experiments.html", {'exp_list': exp_list, 'deploy_path': DEPLOY_PATH})
+    return render(request, "withings_experiments.html", {'exp_list': exp_list, 'deploy_path': deploy_path})

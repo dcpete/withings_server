@@ -16,6 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from django.conf import settings
 
 from rest_framework import routers
 
@@ -23,6 +24,7 @@ from withings import views as withingsviews
  
 router = routers.DefaultRouter()
 
+deploy_path = settings.WITHINGS_DEPLOY_PATH + '/'
 
 router.register(r'userinfo', withingsviews.UserInfoViewSet)
 router.register(r'device', withingsviews.DeviceViewSet)
@@ -30,13 +32,13 @@ router.register(r'experiment', withingsviews.ExperimentViewSet)
 router.register(r'rawdatarecord', withingsviews.RawdataRecordViewSet)
 
 urlpatterns = [
-    path('withings/', include(router.urls)),
-    path('withings/admin/', admin.site.urls),
-    path('withings/api-auth/', include('rest_framework.urls', namespace='rest_framework')),    
-    path('withings/oauth2/', withingsviews.oauth2),
-    path('withings/callback/', withingsviews.callback2),
-    path('withings/getdevices/', withingsviews.getdevices),
-    path('withings/getrawdata/', withingsviews.get_rawdata),
-    path('withings/activate/', withingsviews.activate),
-    path("withings/experiments/", withingsviews.withings_experiments),
+    path(deploy_path, include(router.urls)),
+    path(deploy_path + 'admin/', admin.site.urls),
+    path(deploy_path + 'api-auth/', include('rest_framework.urls', namespace='rest_framework')),    
+    path(deploy_path + 'oauth2/', withingsviews.oauth2),
+    path(deploy_path + 'callback/', withingsviews.callback2),
+    path(deploy_path + 'getdevices/', withingsviews.getdevices),
+    path(deploy_path + 'getrawdata/', withingsviews.get_rawdata),
+    path(deploy_path + 'activate/', withingsviews.activate),
+    path(deploy_path + 'experiments/', withingsviews.withings_experiments),
 ]

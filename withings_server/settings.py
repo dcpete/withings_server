@@ -12,6 +12,15 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 import os
 from pathlib import Path
 
+
+# THESE SETTINGS NOW COME FROM ENVIRONMENT VARIABLES
+DEBUG = False
+WITHINGS_HOSTNAME = 'pahplab.cssm.iastate.edu'
+WITHINGS_DEPLOY_PATH = 'withings'
+WITHINGS_CLIENT_ID = 'b007216a30ef05a7460e943097f24a4057c019a5de35af805d2dcedafe406825'
+WITHINGS_CLIENT_SECRET = '80f91586b07df216af8693fa278db62a88c3ba29ccc3495f8d4d4b301d0b5614'
+WITHINGS_REDIRECT_URI = 'https://pahplab.cssm.iastate.edu/withings/callback/'
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -23,23 +32,19 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = "django-insecure-y2skidy%ng2i^3u7-01-6&nfy(y86p-c!j^9_osn@!%1_^rfy+"
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+# Used if deploying to a path, i.e. https://www.example.com/withings would be 'withings'
 
+# Allow https proxy headers
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'pahplab.cssm.iastate.edu', 'pahp.cssm.iastate.edu']
+# Allow hosts, including proxy hosts
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', WITHINGS_HOSTNAME]
 
-CSRF_TRUSTED_ORIGINS = ['https://pahplab.cssm.iastate.edu', 'https://pahplab.cssm.iastate.edu:8000', 'https://127.0.0.1:8000']
+CSRF_TRUSTED_ORIGINS = ['https://' + WITHINGS_HOSTNAME, 'http://' + WITHINGS_HOSTNAME + ':8000', 'http://127.0.0.1:8000']
 
-CSRF_COOKIE_PATH = '/withings'
-
-WEB_SERVER_DEPLOY_PATH = '/withings'
+CSRF_COOKIE_PATH = '/' + WITHINGS_DEPLOY_PATH
 
 SECURE_REFERRER_POLICY = "same-origin"
-#SECURE_REFERRER_POLICY = "None"
-#SECURE_CROSS_ORIGIN_OPENER_POLICY = "None"
-#SECURE_CONTENT_TYPE_NOSNIFF = "False"
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -110,7 +115,7 @@ WSGI_APPLICATION = "withings_server.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "NAME": BASE_DIR / "db/db.sqlite3",
     }
 }
 
@@ -145,16 +150,15 @@ USE_I18N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = "withings/static/"
+STATIC_URL = WITHINGS_DEPLOY_PATH + "/static/"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-LOCAL_WITHINGS_DATA_DIR = 'files/withings_data'
+LOCAL_WITHINGS_DATA_DIR = 'files'
 WORKING_WITHINGS_DATA_PATH = os.path.join(BASE_DIR, LOCAL_WITHINGS_DATA_DIR)
