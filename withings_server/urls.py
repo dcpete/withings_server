@@ -24,7 +24,7 @@ from withings import views as withingsviews
  
 router = routers.DefaultRouter()
 
-deploy_path = settings.WITHINGS_DEPLOY_PATH + '/'
+context_root = settings.WITHINGS_CONTEXT_ROOT + '/'
 
 router.register(r'userinfo', withingsviews.UserInfoViewSet)
 router.register(r'device', withingsviews.DeviceViewSet)
@@ -32,13 +32,13 @@ router.register(r'experiment', withingsviews.ExperimentViewSet)
 router.register(r'rawdatarecord', withingsviews.RawdataRecordViewSet)
 
 urlpatterns = [
-    path(deploy_path, include(router.urls)),
-    path(deploy_path + 'admin/', admin.site.urls),
-    path(deploy_path + 'api-auth/', include('rest_framework.urls', namespace='rest_framework')),    
-    path(deploy_path + 'oauth2/', withingsviews.oauth2),
-    path(deploy_path + 'callback/', withingsviews.callback2),
-    path(deploy_path + 'getdevices/', withingsviews.getdevices),
-    path(deploy_path + 'getrawdata/', withingsviews.get_rawdata),
-    path(deploy_path + 'activate/', withingsviews.activate),
-    path(deploy_path + 'experiments/', withingsviews.withings_experiments),
+    path(context_root, include(router.urls)),
+    path(context_root + 'admin/', admin.site.urls),
+    path(context_root + 'api-auth/', include('rest_framework.urls', namespace='rest_framework')),    
+    path(context_root + 'oauth2/', withingsviews.oauth2),
+    path(context_root + 'callback/', withingsviews.callback2),
+    path(context_root + 'getdevices/', withingsviews.getdevices),
+    path(context_root + 'getrawdata/', withingsviews.get_rawdata),
+    path(context_root + 'activate/', withingsviews.activate),
+    path(context_root + 'experiments/', withingsviews.withings_experiments),
 ]

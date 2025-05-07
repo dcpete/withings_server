@@ -1,0 +1,7 @@
+django 
+gunicorn 
+psycopg2-binary 
+djangorestframework 
+requests 
+pandas
+tzlocal

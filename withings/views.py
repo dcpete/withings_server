@@ -13,13 +13,14 @@ import json
 import requests
 import datetime as dt
 from zoneinfo import ZoneInfo
+import tzlocal
 
 # Create your views here.
 
 
 DT_ACCEL=1 # accelerometer data_type = 1
 
-deploy_path = settings.WITHINGS_DEPLOY_PATH + '/'
+context_root = settings.WITHINGS_CONTEXT_ROOT + '/'
 client_id = settings.WITHINGS_CLIENT_ID
 client_secret = settings.WITHINGS_CLIENT_SECRET
 redirect_uri = settings.WITHINGS_REDIRECT_URI
@@ -100,7 +101,7 @@ def callback2(request):
         user.save()
 
     #return JsonResponse(res_json)
-    return redirect('/' + deploy_path + "experiments/")
+    return redirect('/' + context_root + "experiments/")
 
 
 
@@ -142,7 +143,7 @@ def activate(request):
 
     endtime = request.GET['endtime']
     et = dt.datetime.strptime(endtime, "%Y-%m-%dT%H:%M")
-    est = et.replace(tzinfo=ZoneInfo('America/New_York'))
+    est = et.replace(tzinfo=ZoneInfo(tzlocal.get_localzone_name()))
     enddate = int(est.timestamp())
 
     data_type = 1 # Accelerometer data
@@ -172,7 +173,7 @@ def activate(request):
     else:
         return JsonResponse({"error":"access token experied"})
 
-    return redirect(DEPLOY_PATH + "/experiments/")
+    return redirect('/' + context_root + "experiments/")
 
 def getdevices(request):
     userid = request.GET['userid']
@@ -289,7 +290,7 @@ def get_rawdata(request):
         exp.download_offset = -1
         exp.save()
     
-    return redirect(DEPLOY_PATH + "/experiments/")
+    return redirect('/' + context_root + "experiments/")
 
 def list_heart(request):
     userid = request.GET['userid']
@@ -387,4 +388,4 @@ def withings_experiments(request):
         
         exp_list.append(record)
 
-    return render(request, "withings_experiments.html", {'exp_list': exp_list, 'deploy_path': deploy_path})
+    return render(request, "withings_experiments.html", {'exp_list': exp_list, 'context_root': context_root})

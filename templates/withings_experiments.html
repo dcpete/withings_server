@@ -20,7 +20,7 @@ Withings Experiments
 
 {% block content %}
 <h2>Start a New Experiment</h2>
-<form action="/{{ deploy_path }}activate" method="GET">
+<form action="/{{ context_root }}activate" method="GET">
   <div class="input-group mb-3">
     <span class="input-group-text">User ID:</span>
     <input type="text" class="form-control" name="userid" />
@@ -57,15 +57,15 @@ Withings Experiments
       <td>{{ record.userid }}</a></td>
       <td>{{ record.start_time }}</td>
       <td>{{ record.end_time }}</td>
-      <td>{% for d in record.data_files %} <a href="/{{ deploy_path }}files/{{ d.filename }}">{{ d.filename }}</a> {% endfor %}</td>
+      <td>{% for d in record.data_files %} <a href="/{{ context_root }}files/{{ d.filename }}">{{ d.filename }}</a> {% endfor %}</td>
       <td>{% if record.offset == 0 %}
         <a {% if record.on_going %} class="btn btn-primary disabled" {% else %} class="btn btn-primary" {% endif %}
-          href="/{{ deploy_path }}getrawdata/?exp_id={{ record.id }}" role="button">Fetch RawData</a>
+          href="/{{ context_root }}getrawdata/?exp_id={{ record.id }}" role="button">Fetch RawData</a>
         {% elif record.offset > 0 %}
-	<a class="btn btn-info" href="/{{ deploy_path }}getrawdata/?exp_id={{ record.id }}&offset={{ record.offset }}"
+	<a class="btn btn-info" href="/{{ context_root }}getrawdata/?exp_id={{ record.id }}&offset={{ record.offset }}"
           role="button">Fetch More</a>
         {% else %}
-	<a class="btn btn-warning" href="/{{ deploy_path }}getrawdata/?exp_id={{ record.id }}" role="button">Refetch</a>
+	<a class="btn btn-warning" href="/{{ context_root }}getrawdata/?exp_id={{ record.id }}" role="button">Refetch</a>
         {% endif %}
       </td>
     </tr>

@@ -12,14 +12,52 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 import os
 from pathlib import Path
 
+def read_from_file(filepath):
+    try:
+        with open(filepath, 'r') as file:
+            file_content = file.read()
+            return file_content
+    except FileNotFoundError:
+        print(f"Error: File not found: {filepath}")
+        return None
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        return None
+    
+def get_docker_secret(filename, default = None):
+    filepath = os.path.join('/run/secrets', filename)
+    return read_from_file(filepath)
+
+def get_local_file(filename, default = None):
+    filepath = os.path.join('./', filename)
+    return read_from_file(filepath)
+
+def get_env_var(varname, default = None):
+    os.environ.get(varname, default)
+
+
+def get_setting(setting, default = None):
+    setting_funcs = [get_env_var, get_docker_secret, get_local_file]
+    for func in setting_funcs:
+        result = func(setting, default)
+        if result:
+            return result
+    return None
+
 
 # THESE SETTINGS NOW COME FROM ENVIRONMENT VARIABLES
-DEBUG = False
-WITHINGS_HOSTNAME = 'pahplab.cssm.iastate.edu'
-WITHINGS_DEPLOY_PATH = 'withings'
-WITHINGS_CLIENT_ID = 'b007216a30ef05a7460e943097f24a4057c019a5de35af805d2dcedafe406825'
-WITHINGS_CLIENT_SECRET = '80f91586b07df216af8693fa278db62a88c3ba29ccc3495f8d4d4b301d0b5614'
-WITHINGS_REDIRECT_URI = 'https://pahplab.cssm.iastate.edu/withings/callback/'
+WITHINGS_DEBUG = get_setting("WITHINGS_DEBUG", "False")
+WITHINGS_HOSTNAME = get_setting("WITHINGS_HOSTNAME")
+WITHINGS_CONTEXT_ROOT = get_setting("WITHINGS_CONTEXT_ROOT", "withings")
+WITHINGS_CLIENT_ID = get_setting("WITHINGS_CLIENT_ID")
+WITHINGS_CLIENT_SECRET = get_setting("WITHINGS_CLIENT_SECRET")
+
+debug_check = WITHINGS_DEBUG.lower()
+DEBUG = debug_check == "true" or debug_check == "1" or debug_check == "y"
+
+context_root_trailing_slash = WITHINGS_CONTEXT_ROOT + "/" if WITHINGS_CONTEXT_ROOT else ""
+context_root_preceding_slash = "/" + WITHINGS_CONTEXT_ROOT if WITHINGS_CONTEXT_ROOT else ""
+WITHINGS_REDIRECT_URI = 'https://' + WITHINGS_HOSTNAME + '/' + context_root_trailing_slash + 'callback/'
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -30,7 +68,8 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-y2skidy%ng2i^3u7-01-6&nfy(y86p-c!j^9_osn@!%1_^rfy+"
+SECRET_KEY = get_docker_secret()
+SECRET_KEY = "django-insecure-y7b@3R!Sg9d#tL5x2z&v4mO8wQpY6uN1oI9k*jH0hC8fB7eA6d"
 
 # Used if deploying to a path, i.e. https://www.example.com/withings would be 'withings'
 
@@ -41,8 +80,8 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 ALLOWED_HOSTS = ['127.0.0.1', 'localhost', WITHINGS_HOSTNAME]
 
 CSRF_TRUSTED_ORIGINS = ['https://' + WITHINGS_HOSTNAME, 'http://' + WITHINGS_HOSTNAME + ':8000', 'http://127.0.0.1:8000']
-
-CSRF_COOKIE_PATH = '/' + WITHINGS_DEPLOY_PATH
+CSRF_COOKIE_DOMAIN = WITHINGS_HOSTNAME
+CSRF_COOKIE_PATH = '/' + WITHINGS_CONTEXT_ROOT
 
 SECURE_REFERRER_POLICY = "same-origin"
 
@@ -153,7 +192,7 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = WITHINGS_DEPLOY_PATH + "/static/"
+STATIC_URL = context_root_trailing_slash + "static/"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
