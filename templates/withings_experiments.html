@@ -1,8 +1,6 @@
 {% extends "base.html" %}
 
 {% load datetime_local %}
-{% load tz %}
-{% get_current_timezone as TIME_ZONE %}
 
 {% block title %}
 Withings Experiments
@@ -20,7 +18,6 @@ Withings Experiments
 
 {% block heading %}
 <h1 align="center">Withings Experiments</h1>
-<p>All times are shown for {{ timezone }} ({{ tz_offset }})</p>
 {% endblock %}
 
 {% block content %}
@@ -45,6 +42,7 @@ Withings Experiments
 
 <br />
 <h2>Total Experiments: {{ exp_list|length}} </h2>
+<p>All times are shown for {{ timezone }} ({{ tz_offset }})</p>
 <table class="table table-hover">
   <thead>
     <th>#</th>

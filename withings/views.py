@@ -170,13 +170,20 @@ def activate(request):
     for param in required_params:
         if not request.GET.get(param):
             return HttpResponse("Missing parameter: " + param, 400)
-    userid = request.GET['userid']
+    
+    userid = request.GET.get('userid')
+    users = UserInfo.objects.filter(userid=userid)
+    if users.count() <= 0:
+        return JsonResponse({"error": "userid %s doesn't exist" % userid})
+    if is_token_expired(userid):
+        return oauth2(request)
+    
     #hash_deviceid = request.GET['hdeviceid']
     #data_type = request.GET['dtype']
 
     endtime = request.GET['endtime']
     et = dt.datetime.strptime(endtime, "%Y-%m-%dT%H:%M")
-    est = et.replace(tzinfo=ZoneInfo(tzlocal.get_localzone_name()))
+    est = et.replace(tzinfo=ZoneInfo(settings.TIME_ZONE))
     enddate = int(est.timestamp())
 
     data_type = 1 # Accelerometer data
@@ -213,6 +220,9 @@ def getdevices(request):
     users = UserInfo.objects.filter(userid=userid)
     if users.count() <= 0:
         return JsonResponse({"error": "userid %s doesn't exist" % userid})
+    
+    if is_token_expired(userid):
+        return oauth2(request)
     
     access_token = users[0].access_token
 
