@@ -22,16 +22,16 @@ Withings Experiments
 
 {% block content %}
 <h2>Start a New Experiment</h2>
-<form action="/{{ context_root }}activate" method="POST">
+<form action="/{{ context_root }}activate/" method="POST">
   <input type="hidden" name="userid" value="{{userid}}"/>
   <div class="input-group mb-3">
     <div class="input-group-prepend">
       <label class="input-group-text" for="inputGroupSelect01">Device</label>
     </div>
-    <select class="custom-select" id="inputGroupSelect01">
+    <select class="custom-select" id="inputGroupSelect01" name="deviceid">
       <option selected>Choose...</option>
       {% for device in devices %}
-      <option value="{{ device.deviceid }}">{{ device.type }} {{ device.model }} {{ device.deviceid }}</option>
+      <option value="{{ device.deviceid }}">{{ device.model }} ({{ device.mac_address }})</option>
       {% endfor %}
     </select>
   </div>
@@ -73,12 +73,12 @@ Withings Experiments
       <td>{% for d in record.data_files %} <a href="/{{ context_root }}files/{{ d.filename }}">{{ d.filename }}</a> {% endfor %}</td>
       <td>{% if record.offset == 0 %}
         <a {% if record.on_going %} class="btn btn-primary disabled" {% else %} class="btn btn-primary" {% endif %}
-          href="/{{ context_root }}getrawdata/?exp_id={{ record.id }}" role="button">Fetch RawData</a>
+          href="/{{ context_root }}getrawdata/?exp_id={{ record.id }}" role="button">{% if record.on_going %}Running{% else %}Fetch Data{% endif %}</a>
         {% elif record.offset > 0 %}
-	<a class="btn btn-info" href="/{{ context_root }}getrawdata/?exp_id={{ record.id }}&offset={{ record.offset }}"
+        <a class="btn btn-info" href="/{{ context_root }}getrawdata/?exp_id={{ record.id }}&offset={{ record.offset }}"
           role="button">Fetch More</a>
         {% else %}
-	<a class="btn btn-warning" href="/{{ context_root }}getrawdata/?exp_id={{ record.id }}" role="button">Refetch</a>
+        <a class="btn btn-warning" href="/{{ context_root }}getrawdata/?exp_id={{ record.id }}" role="button">Refetch</a>
         {% endif %}
       </td>
     </tr>

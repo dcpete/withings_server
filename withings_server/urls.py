@@ -24,7 +24,7 @@ context_root = settings.WITHINGS_CONTEXT_ROOT + '/'
 
 urlpatterns = [
     #path(context_root, include(router.urls)),
-    path(context_root, withingsviews.oauth2),
+    path(context_root, withingsviews.withings_experiments),
     path(context_root + 'userinfo/', withingsviews.UserInfoViewSet.as_view({'get': 'list'}), name='userinfo'),
     path(context_root + 'device/', withingsviews.DeviceViewSet.as_view({'get': 'list'}), name='device'),
     path(context_root + 'experiment/', withingsviews.ExperimentViewSet.as_view({'get': 'list'}), name='experiment'),

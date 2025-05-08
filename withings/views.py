@@ -32,7 +32,8 @@ def is_token_expired(request):
     d_now = dt.datetime.now(dt.timezone.utc)
     d_updated = dt.datetime.fromtimestamp(request.session["issued_at"], dt.timezone.utc)
     expires_in = request.session["expires_in"]
-    print("token expires in " + str(int(expires_in) - abs(d_now - d_updated).seconds) + " seconds")
+    if settings.DEBUG:
+        print("token expires in " + str(int(expires_in) - abs(d_now - d_updated).seconds) + " seconds")
     return abs(d_now - d_updated).seconds > int(expires_in)
 
 def get_userid(request):
@@ -175,15 +176,15 @@ def activate(request):
     if is_token_expired(request):
         return oauth2(request)
     
-    deviceid = request.GET.get('deviceid')
+    deviceid = request.POST.get('deviceid')
     devices = Device.objects.filter(deviceid=deviceid,userid=userid)
     if devices.count() <= 0:
-        return JsonResponse({"error": "no device such device associated with userid %s" % userid})
+        return JsonResponse({"error": "no such device associated with userid %s" % userid})
     
     #hash_deviceid = request.GET['hdeviceid']
     #data_type = request.GET['dtype']
 
-    endtime = request.GET['endtime']
+    endtime = request.POST.get('endtime')
     et = dt.datetime.strptime(endtime, "%Y-%m-%dT%H:%M")
     est = et.replace(tzinfo=ZoneInfo(settings.TIME_ZONE))
     enddate = int(est.timestamp())
