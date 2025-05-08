@@ -14,6 +14,7 @@ import requests
 import datetime as dt
 from zoneinfo import ZoneInfo
 import tzlocal
+import pytz
 
 # Create your views here.
 
@@ -25,6 +26,20 @@ client_id = settings.WITHINGS_CLIENT_ID
 client_secret = settings.WITHINGS_CLIENT_SECRET
 redirect_uri = settings.WITHINGS_REDIRECT_URI
 
+
+def is_token_expired(userid):
+    users = UserInfo.objects.filter(userid=userid)
+    if users.count() <= 0:
+        raise Exception("userid %s doesn't exist" % userid)
+    if not users[0].updated:
+        raise Exception("property 'updated' does not exist for userid %s" % userid)
+    if not users[0].expires_in:
+        raise Exception("property 'expires_in' does not exist for userid %s" % userid)
+    d_now = dt.datetime.now(dt.timezone.utc)
+    d_updated = users[0].updated
+    expires_in = users[0].expires_in
+    print("token expires in " + str(int(expires_in) - abs(d_now - d_updated).seconds) + " seconds")
+    return abs(d_now - d_updated).seconds > int(expires_in)
 
 def get_access_token(userid):
     users = UserInfo.objects.filter(userid=userid)
@@ -84,9 +99,6 @@ def callback2(request):
 
     access_token = json_body["access_token"]
 
-
-    
-
     if users.count() <= 0:
         new_user = UserInfo(**json_body)
         new_user.save()
@@ -100,8 +112,29 @@ def callback2(request):
         user.token_type = json_body["token_type"]
         user.save()
 
+    res = get_deviceid(access_token)
+    res_json = res.json()
+
+    devices = res_json["body"]["devices"]
+
+    for d in devices:
+        target_devices = Device.objects.filter(deviceid=d['deviceid'], userid=userid)
+        if target_devices.count() <= 0:
+            new_device = Device(hash_deviceid=d['hash_deviceid'],userid=userid)
+            new_device.deviceid = d['deviceid']
+            new_device.mac_address = d['mac_address']
+            new_device.type = d['type']
+            new_device.model = d['model']
+            new_device.model_id = d['model_id']
+            new_device.timezone = d['timezone']
+            new_device.fw = d['fw']
+            new_device.first_session_date = d['first_session_date']
+            new_device.last_session_date = d['last_session_date']
+
+            new_device.save()
+
     #return JsonResponse(res_json)
-    return redirect('/' + context_root + "experiments/")
+    return redirect('/' + context_root + "experiments?userid=" + userid)
 
 
 
@@ -173,7 +206,7 @@ def activate(request):
     else:
         return JsonResponse({"error":"access token experied"})
 
-    return redirect('/' + context_root + "experiments/")
+    return redirect('/' + context_root + "experiments?userid=" + userid)
 
 def getdevices(request):
     userid = request.GET['userid']
@@ -290,7 +323,7 @@ def get_rawdata(request):
         exp.download_offset = -1
         exp.save()
     
-    return redirect('/' + context_root + "experiments/")
+    return redirect('/' + context_root + "experiments?userid=" + userid)
 
 def list_heart(request):
     userid = request.GET['userid']
@@ -364,8 +397,21 @@ class RawdataRecordViewSet(viewsets.ModelViewSet):
 
 
 from .utils import timestamp2est
+from django.utils import timezone
+
 
 def withings_experiments(request):
+    userid = request.GET.get('userid')
+    if not userid:
+        return oauth2(request)
+
+    users = UserInfo.objects.filter(userid=userid)
+    if users.count() <= 0:
+        return JsonResponse({"error": "userid %s does not exist" % userid})
+    
+    if is_token_expired(userid):
+        return oauth2(request)
+
     exps = Experiment.objects.all().order_by('-created')
 
     now_ts = dt.datetime.now().timestamp()
@@ -388,4 +434,7 @@ def withings_experiments(request):
         
         exp_list.append(record)
 
-    return render(request, "withings_experiments.html", {'exp_list': exp_list, 'context_root': context_root})
+    timezone_offset = dt.datetime.now(pytz.timezone(settings.TIME_ZONE)).strftime("%Z%z")
+    timezone = settings.TIME_ZONE
+
+    return render(request, "withings_experiments.html", {'exp_list': exp_list, 'context_root': context_root, 'userid': userid, 'timezone': settings.TIME_ZONE, 'tz_offset': timezone_offset})

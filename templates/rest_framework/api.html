@@ -1,9 +1,8 @@
 {% extends 'rest_framework/base.html' %}
 
 {% block content %}
-        {{ block.super }}
 	<div class="custom-buttons">
-		<button onclick="window.location.href='/withings/oauth2/'">OAuth2</button>
 		<button onclick="window.location.href='/withings/experiments/'">Experiments</button>
 	</div>
+	{{ block.super }}
 {% endblock %}

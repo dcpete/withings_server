@@ -18,21 +18,17 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 
-from rest_framework import routers
-
 from withings import views as withingsviews
  
-router = routers.DefaultRouter()
-
 context_root = settings.WITHINGS_CONTEXT_ROOT + '/'
 
-router.register(r'userinfo', withingsviews.UserInfoViewSet)
-router.register(r'device', withingsviews.DeviceViewSet)
-router.register(r'experiment', withingsviews.ExperimentViewSet)
-router.register(r'rawdatarecord', withingsviews.RawdataRecordViewSet)
-
 urlpatterns = [
-    path(context_root, include(router.urls)),
+    #path(context_root, include(router.urls)),
+    path(context_root, withingsviews.oauth2),
+    path(context_root + 'userinfo/', withingsviews.UserInfoViewSet.as_view({'get': 'list'}), name='userinfo'),
+    path(context_root + 'device/', withingsviews.DeviceViewSet.as_view({'get': 'list'}), name='device'),
+    path(context_root + 'experiment/', withingsviews.ExperimentViewSet.as_view({'get': 'list'}), name='experiment'),
+    path(context_root + 'rawdatarecord/', withingsviews.RawdataRecordViewSet.as_view({'get': 'list'}), name='rawdatarecord'),
     path(context_root + 'admin/', admin.site.urls),
     path(context_root + 'api-auth/', include('rest_framework.urls', namespace='rest_framework')),    
     path(context_root + 'oauth2/', withingsviews.oauth2),
