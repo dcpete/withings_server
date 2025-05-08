@@ -27,10 +27,10 @@ redirect_uri = settings.WITHINGS_REDIRECT_URI
 
 
 def is_token_expired(request):
-    if not request.session["updated"]:
+    if not request.session["access_token"]:
         return True
     d_now = dt.datetime.now(dt.timezone.utc)
-    d_updated = request.session["updated"]
+    d_updated = dt.datetime.fromtimestamp(request.session["issued_at"], dt.timezone.utc)
     expires_in = request.session["expires_in"]
     print("token expires in " + str(int(expires_in) - abs(d_now - d_updated).seconds) + " seconds")
     return abs(d_now - d_updated).seconds > int(expires_in)
@@ -105,6 +105,7 @@ def callback2(request):
     request.session['expires_in'] = json_body["expires_in"]
     request.session['csrf_token'] = json_body["csrf_token"]
     request.session['token_type'] = json_body["token_type"]
+    request.session['issued_at'] = dt.datetime.now(dt.timezone.utc).timestamp()
 
     res = get_deviceid(access_token)
     res_json = res.json()
