@@ -26,26 +26,25 @@ client_secret = settings.WITHINGS_CLIENT_SECRET
 redirect_uri = settings.WITHINGS_REDIRECT_URI
 
 
-def is_token_expired(userid):
-    users = UserInfo.objects.filter(userid=userid)
-    if users.count() <= 0:
-        raise Exception("userid %s doesn't exist" % userid)
-    if not users[0].updated:
-        raise Exception("property 'updated' does not exist for userid %s" % userid)
-    if not users[0].expires_in:
-        raise Exception("property 'expires_in' does not exist for userid %s" % userid)
+def is_token_expired(request):
+    auth = request.session["auth"]
+    if not auth:
+        return True
     d_now = dt.datetime.now(dt.timezone.utc)
-    d_updated = users[0].updated
-    expires_in = users[0].expires_in
+    d_updated = auth["updated"]
+    expires_in = auth["expires_in"]
     print("token expires in " + str(int(expires_in) - abs(d_now - d_updated).seconds) + " seconds")
     return abs(d_now - d_updated).seconds > int(expires_in)
 
-def get_access_token(userid):
-    users = UserInfo.objects.filter(userid=userid)
-    if users.count() <= 0:
-        raise Exception("userid %s doesn't exist" % userid)
+def get_userid(request):
+    return request.session["userid"]
+
+def get_access_token(request):
+    auth = request.session["auth"]
+    if not auth:
+        return None
     
-    return users[0].access_token
+    return auth["access_token"]
 
 def get_deviceid(access_token):
     url = 'https://wbsapi.withings.net/v2/user'
@@ -94,22 +93,18 @@ def callback2(request):
 
     json_body = res_json['body']
     userid = json_body["userid"]
-    users = UserInfo.objects.filter(userid = userid)
-
     access_token = json_body["access_token"]
-
+    
+    users = UserInfo.objects.filter(userid = userid)
     if users.count() <= 0:
         new_user = UserInfo(**json_body)
         new_user.save()
-    elif users[0].access_token != access_token:
+    else:
         user = users[0]
-        user.access_token = access_token
-        user.refresh_token = json_body["refresh_token"]
-        user.scope = json_body["scope"]
-        user.expires_in = json_body["expires_in"]
-        user.csrf_token = json_body["csrf_token"]
-        user.token_type = json_body["token_type"]
         user.save()
+
+    request.session['userid'] = userid
+    request.session["auth"] = json_body
 
     res = get_deviceid(access_token)
     res_json = res.json()
@@ -133,7 +128,7 @@ def callback2(request):
             new_device.save()
 
     #return JsonResponse(res_json)
-    return redirect('/' + context_root + "experiments?userid=" + userid)
+    return redirect('/' + context_root + "experiments")
 
 
 
@@ -165,16 +160,18 @@ def notifyCallback(request):
 
         
 def activate(request):
-    required_params = ['userid', 'deviceid', 'endtime']
+    required_params = ['deviceid', 'endtime']
     for param in required_params:
-        if not request.GET.get(param):
+        if not request.POST.get(param):
             return HttpResponse("Missing parameter: " + param, 400)
     
-    userid = request.GET.get('userid')
+    userid = get_userid(request)
+    if not userid:
+        return oauth2(request)
     users = UserInfo.objects.filter(userid=userid)
     if users.count() <= 0:
         return JsonResponse({"error": "userid %s doesn't exist" % userid})
-    if is_token_expired(userid):
+    if is_token_expired(request):
         return oauth2(request)
     
     deviceid = request.GET.get('deviceid')
@@ -200,7 +197,7 @@ def activate(request):
     if exps.count() > 0:
         return JsonResponse({"error": "an existing experiment ends at %s" % exps[0].enddate})
 
-    access_token = get_access_token(userid)
+    access_token = get_access_token(request)
     res = rawdata_activate(access_token, hash_deviceid, data_type, enddate)
 
     res_json = res.json()
@@ -213,18 +210,20 @@ def activate(request):
     else:
         return JsonResponse({"error":"access token experied"})
 
-    return redirect('/' + context_root + "experiments?userid=" + userid)
+    return redirect('/' + context_root + "experiments")
 
 def getdevices(request):
-    userid = request.GET['userid']
+    userid = get_userid(request)
+    if not userid:
+        return oauth2(request)
     users = UserInfo.objects.filter(userid=userid)
     if users.count() <= 0:
         return JsonResponse({"error": "userid %s doesn't exist" % userid})
     
-    if is_token_expired(userid):
+    if is_token_expired(request):
         return oauth2(request)
     
-    access_token = users[0].access_token
+    access_token = get_access_token(request)
 
     res = get_deviceid(access_token)
     res_json = res.json()
@@ -297,7 +296,9 @@ def get_rawdata(request):
     else:
         offset = 0
 
-    access_token = get_access_token(userid)
+    access_token = get_access_token(request)
+    if not access_token:
+        return oauth2(request)
     headers = {"Authorization": "Bearer %s" % access_token}
     res = requests.post(url, urlencode(params), headers=headers)    
     jres = res.json()
@@ -333,15 +334,16 @@ def get_rawdata(request):
         exp.download_offset = -1
         exp.save()
     
-    return redirect('/' + context_root + "experiments?userid=" + userid)
+    return redirect('/' + context_root + "experiments")
 
 def list_heart(request):
-    userid = request.GET['userid']
     startdate = request.GET['startdate']
     enddate = request.GET['enddate']
 
     url = 'https://wbsapi.withings.net/v2/heart'
-    access_token = get_access_token(userid)
+    access_token = get_access_token(request)
+    if not access_token:
+        return oauth2(request)
 
     headers = {"Authorization": "Bearer %s" % access_token}
     params = {'action':'list', 'startdate':startdate, 'enddate':enddate}
@@ -355,7 +357,9 @@ def get_heart(request):
     signalid = request.GET['signalid']
 
     url = 'https://wbsapi.withings.net/v2/heart'
-    access_token = get_access_token(userid)
+    access_token = get_access_token(request)
+    if not access_token:
+        return oauth2(request)
 
     headers = {"Authorization": "Bearer %s" % access_token}
     params = {'action':'get', 'signalid':signalid}
@@ -419,7 +423,7 @@ def withings_experiments(request):
     if users.count() <= 0:
         return JsonResponse({"error": "userid %s does not exist" % userid})
     
-    if is_token_expired(userid):
+    if is_token_expired(request):
         return oauth2(request)
     
     devices = Device.objects.filter(userid=userid)

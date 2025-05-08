@@ -22,7 +22,7 @@ Withings Experiments
 
 {% block content %}
 <h2>Start a New Experiment</h2>
-<form action="/{{ context_root }}activate" method="GET">
+<form action="/{{ context_root }}activate" method="POST">
   <input type="hidden" name="userid" value="{{userid}}"/>
   <div class="input-group mb-3">
     <div class="input-group-prepend">
