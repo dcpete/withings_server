@@ -1,8 +1,6 @@
 #!/bin/bash
 
-if [ -n "$VIRTUAL_ENV" ]; then
-  echo "Virtual environment is active: $VIRTUAL_ENV"
-else
+if [ -z "$VIRTUAL_ENV" ]; then
   if [ -d "venv" ]; then
     . venv/bin/activate
   else
@@ -16,6 +14,8 @@ else
         ;;
     esac
   fi
+else
+  echo "Virtual environment is active: $VIRTUAL_ENV"
 fi
 
 pip install -r requirements.txt
@@ -23,3 +23,4 @@ mkdir files db
 python manage.py makemigrations accounts
 python manage.py makemigrations withings
 python manage.py migrate
+
