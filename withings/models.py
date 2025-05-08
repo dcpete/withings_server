@@ -30,7 +30,7 @@ class UserInfo(models.Model):
 
     class Meta:
         indexes = [
-            models.Index(fields=['updated', 'created'])
+            models.Index(fields=['userid', 'updated', 'created'])
         ]
 
 class Device(models.Model):
@@ -49,13 +49,15 @@ class Device(models.Model):
 
     userid = models.CharField(max_length=32)
 
+    friendlyname=models.CharField(max_length=64)
+
     updated = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         unique_together = [('hash_deviceid', 'userid')]
         indexes = [
-            models.Index(fields=['deviceid', 'mac_address', 'updated', 'created'])
+            models.Index(fields=['deviceid', 'name', 'mac_address', 'updated', 'created'])
         ]
 
 class Experiment(models.Model):

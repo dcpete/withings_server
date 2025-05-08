@@ -37,4 +37,5 @@ urlpatterns = [
     path(context_root + 'getrawdata/', withingsviews.get_rawdata),
     path(context_root + 'activate/', withingsviews.activate),
     path(context_root + 'experiments/', withingsviews.withings_experiments),
+    path(context_root + 'updatedevice/', withingsviews.update_device),
 ]

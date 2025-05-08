@@ -1,6 +1,8 @@
 {% extends "base.html" %}
 
 {% load datetime_local %}
+{% now "Y-m-d\TH:i" as current_time %}
+{% load static %}
 
 {% block title %}
 Withings Experiments
@@ -21,35 +23,43 @@ Withings Experiments
 {% endblock %}
 
 {% block content %}
-<h2>Start a New Experiment</h2>
-<form action="/{{ context_root }}activate/" method="POST">
-  <input type="hidden" name="userid" value="{{userid}}"/>
-  <div class="input-group mb-3">
-    <div class="input-group-prepend">
-      <label class="input-group-text" for="inputGroupSelect01">Device</label>
-    </div>
-    <select class="custom-select" id="inputGroupSelect01" name="deviceid">
-      <option selected>Choose...</option>
-      {% for device in devices %}
-      <option value="{{ device.deviceid }}">{{ device.model }} ({{ device.mac_address }})</option>
-      {% endfor %}
-    </select>
+<h2>Devices</h2>
+{% for device in devices %}
+<div class="d-flex flex-row">
+  <div class="p-2"><img width="250" src="{% static 'Scanwatch_38_Black_Breath_Selection.png' %}"></div>
+  <div class="p-2 d-flex flex-column">
+    <form action="/{{ context_root }}updatedevice/" method="POST">
+      <input type="hidden" name="deviceid" value="{{ device.deviceid }}">
+      <div class="input-group mb-3">
+        <label for="friendlyname">Watch Name</label>
+        <input id="friendlyname" name="friendlyname" class="form-control form-control-lg" type="text" placeholder="{{ device.friendlyname }}">
+        <button class="btn btn-outline-secondary" type="submit" id="edit-name-button">Update</button>
+      </div>
+    </form>
+    <span>{{ device.model }} {{ device.mac_address }}</span>
+    <span>Registered to user {{ device.userid }}</span>
   </div>
-  <div class="input-group mb-3">
-    <span class="input-group-text">End Date/Time:</span>
-    <input type="datetime-local" class="form-control" name="endtime">
+  <div class="p-2">f
+    <span>Start Experiment</span>
+    <form action="/{{ context_root }}activate/" method="POST">
+      <input type="hidden" name="userid" value="{{ userid }}"/>
+      <input type="hidden" name="deviceid" value="{{ device.deviceid }}"/>
+      <div class="input-group mb-3">
+        <span class="input-group-text">End Date/Time:</span>
+        <input type="datetime-local" class="form-control" name="endtime" value="{% now 'Y-m-d\TH:i' %}">
+      </div>
+      <button class="btn btn-primary" id="start-btn" type="submit">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-right-short"
+          viewBox="0 0 16 16">
+          <path fill-rule="evenodd"
+            d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8" />
+        </svg>
+        Start
+      </button>
+    </form>
   </div>
-  <div>
-    <button class="btn btn-primary" id="start-btn" type="submit">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-right-short"
-        viewBox="0 0 16 16">
-        <path fill-rule="evenodd"
-          d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8" />
-      </svg>
-      Start
-    </button>
-  </div>
-</form>
+</div>
+{% endfor %}
 
 <br />
 <h2>Total Experiments: {{ exp_list|length}} </h2>

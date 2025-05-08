@@ -126,13 +126,27 @@ def callback2(request):
             new_device.fw = d['fw']
             new_device.first_session_date = d['first_session_date']
             new_device.last_session_date = d['last_session_date']
+            new_device.friendlyname = "Withings Watch #" + str(Device.objects.count() + 1)
 
             new_device.save()
 
     #return JsonResponse(res_json)
     return redirect('/' + context_root + "experiments")
 
+def update_device(request):
+    # currently only updating friendlyname
+    friendlyname = request.POST.get("friendlyname")
+    deviceid = request.POST.get("deviceid")
+    userid = get_userid(request)
+    if not userid:
+        return oauth2(request)
 
+    devices = Device.objects.filter(deviceid=deviceid,userid=userid)
+    if devices.count() <= 0:
+        return JsonResponse({"error": "no such device associated with userid %s" % userid})
+    devices[0].friendlyname = friendlyname
+    devices[0].save()
+    return redirect('/' + context_root + "experiments")
 
 
 @csrf_exempt
@@ -244,6 +258,7 @@ def getdevices(request):
             new_device.fw = d['fw']
             new_device.first_session_date = d['first_session_date']
             new_device.last_session_date = d['last_session_date']
+            new_device.friendlyname = "Withings Watch #" + str(Device.objects.count() + 1)
 
             new_device.save()
 
