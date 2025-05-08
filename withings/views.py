@@ -27,12 +27,11 @@ redirect_uri = settings.WITHINGS_REDIRECT_URI
 
 
 def is_token_expired(request):
-    auth = request.session["auth"]
-    if not auth:
+    if not request.session["updated"]:
         return True
     d_now = dt.datetime.now(dt.timezone.utc)
-    d_updated = auth["updated"]
-    expires_in = auth["expires_in"]
+    d_updated = request.session["updated"]
+    expires_in = request.session["expires_in"]
     print("token expires in " + str(int(expires_in) - abs(d_now - d_updated).seconds) + " seconds")
     return abs(d_now - d_updated).seconds > int(expires_in)
 
@@ -40,11 +39,7 @@ def get_userid(request):
     return request.session["userid"]
 
 def get_access_token(request):
-    auth = request.session["auth"]
-    if not auth:
-        return None
-    
-    return auth["access_token"]
+    return request.session["access_token"]
 
 def get_deviceid(access_token):
     url = 'https://wbsapi.withings.net/v2/user'
@@ -104,7 +99,12 @@ def callback2(request):
         user.save()
 
     request.session['userid'] = userid
-    request.session["auth"] = json_body
+    request.session['access_token'] = access_token
+    request.session['refresh_token'] = json_body["access_token"]
+    request.session['scope'] = json_body["access_token"]
+    request.session['expires_in'] = json_body["expires_in"]
+    request.session['csrf_token'] = json_body["csrf_token"]
+    request.session['token_type'] = json_body["token_type"]
 
     res = get_deviceid(access_token)
     res_json = res.json()
@@ -353,7 +353,6 @@ def list_heart(request):
     return JsonResponse(res.json())
 
 def get_heart(request):
-    userid = request.GET['userid']
     signalid = request.GET['signalid']
 
     url = 'https://wbsapi.withings.net/v2/heart'
@@ -415,7 +414,7 @@ from django.utils import timezone
 
 
 def withings_experiments(request):
-    userid = request.GET.get('userid')
+    userid = get_userid(request)
     if not userid:
         return oauth2(request)
 
