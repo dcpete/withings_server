@@ -23,12 +23,23 @@ Withings Experiments
 {% block content %}
 <h2>Start a New Experiment</h2>
 <form action="/{{ context_root }}activate" method="GET">
+  <input type="hidden" name="userid" value="{{userid}}"/>
   <div class="input-group mb-3">
-    <span class="input-group-text">User ID:</span>
-    <input type="text" class="form-control" name="userid" value="{{userid}}"/>
+    <div class="input-group-prepend">
+      <label class="input-group-text" for="inputGroupSelect01">Device</label>
+    </div>
+    <select class="custom-select" id="inputGroupSelect01">
+      <option selected>Choose...</option>
+      {% for device in devices %}
+      <option value="{{ device.deviceid }}">{{ device.type }} {{ device.model }} {{ device.deviceid }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="input-group mb-3">
     <span class="input-group-text">End Date/Time:</span>
     <input type="datetime-local" class="form-control" name="endtime">
-
+  </div>
+  <div>
     <button class="btn btn-primary" id="start-btn" type="submit">
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-right-short"
         viewBox="0 0 16 16">

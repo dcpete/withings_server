@@ -13,7 +13,6 @@ import json
 import requests
 import datetime as dt
 from zoneinfo import ZoneInfo
-import tzlocal
 import pytz
 
 # Create your views here.
@@ -166,7 +165,7 @@ def notifyCallback(request):
 
         
 def activate(request):
-    required_params = ['userid', 'endtime']
+    required_params = ['userid', 'deviceid', 'endtime']
     for param in required_params:
         if not request.GET.get(param):
             return HttpResponse("Missing parameter: " + param, 400)
@@ -178,6 +177,11 @@ def activate(request):
     if is_token_expired(userid):
         return oauth2(request)
     
+    deviceid = request.GET.get('deviceid')
+    devices = Device.objects.filter(deviceid=deviceid,userid=userid)
+    if devices.count() <= 0:
+        return JsonResponse({"error": "no device such device associated with userid %s" % userid})
+    
     #hash_deviceid = request.GET['hdeviceid']
     #data_type = request.GET['dtype']
 
@@ -187,10 +191,6 @@ def activate(request):
     enddate = int(est.timestamp())
 
     data_type = 1 # Accelerometer data
-
-    devices = Device.objects.filter(userid=userid)
-    if devices.count() <= 0:
-        return JsonResponse({"error": "no device associated with userid:%s" % userid})
 
     hash_deviceid = devices[0].hash_deviceid
 
@@ -421,6 +421,8 @@ def withings_experiments(request):
     
     if is_token_expired(userid):
         return oauth2(request)
+    
+    devices = Device.objects.filter(userid=userid)
 
     exps = Experiment.objects.all().order_by('-created')
 
@@ -447,4 +449,4 @@ def withings_experiments(request):
     timezone_offset = dt.datetime.now(pytz.timezone(settings.TIME_ZONE)).strftime("%Z%z")
     timezone = settings.TIME_ZONE
 
-    return render(request, "withings_experiments.html", {'exp_list': exp_list, 'context_root': context_root, 'userid': userid, 'timezone': settings.TIME_ZONE, 'tz_offset': timezone_offset})
+    return render(request, "withings_experiments.html", {'exp_list': exp_list, 'devices': devices, 'context_root': context_root, 'userid': userid, 'timezone': settings.TIME_ZONE, 'tz_offset': timezone_offset})
