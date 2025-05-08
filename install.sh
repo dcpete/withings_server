@@ -21,5 +21,5 @@ fi
 pip install -r requirements.txt
 mkdir files db
 python manage.py makemigrations accounts
-python manage.py makemigrations upload
+python manage.py makemigrations withings
 python manage.py migrate

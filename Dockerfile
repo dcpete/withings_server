@@ -5,7 +5,7 @@ ENV PATH="/venv/bin:$PATH"
 COPY requirements.txt ./
 RUN pip install -r requirements.txt
 COPY manage.py accounts/ templates/ withings/ withings_server/ ./
-RUN mkdir files db && python manage.py makemigrations accounts && python manage.py makemigrations upload && python manage.py migrate
+RUN mkdir files db && python manage.py makemigrations accounts && python manage.py makemigrations withings && python manage.py migrate
 
 FROM build
 COPY --from=build manage.py accounts/ templates/ withings/ withings_server/ files/ venv/ db.sqlite3 ./
