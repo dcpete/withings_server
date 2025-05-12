@@ -19,52 +19,88 @@ Withings Experiments
 {% endblock %}
 
 {% block heading %}
-<h1 align="center">Withings Experiments</h1>
+<div class="text-end fw-light fs-6">Logged in with Withings UserID {{ userid }} | <a href="https://account.withings.com/logout?r={{ logout_url }}">Log out</a></div>
+<h1 class="py-3">Withings Experiments</h1>
 {% endblock %}
 
 {% block content %}
-<h2>Devices</h2>
-{% for device in devices %}
-<div class="d-flex flex-row">
-  <div class="p-2"><img width="250" src="{% static 'Scanwatch_38_Black_Breath_Selection.png' %}"></div>
-  <div class="p-2 d-flex flex-column">
-    <form action="/{{ context_root }}updatedevice/" method="POST">
-      <input type="hidden" name="deviceid" value="{{ device.deviceid }}">
-      <div class="input-group mb-3">
-        <label for="friendlyname">Watch Name</label>
-        <input id="friendlyname" name="friendlyname" class="form-control form-control-lg" type="text" placeholder="{{ device.friendlyname }}">
-        <button class="btn btn-outline-secondary" type="submit" id="edit-name-button">Update</button>
+<h3>Devices</h3>
+<div class="list-group">
+  {% for device in devices %}
+  <div class="list-group-item">
+    <div class="row">
+      <div class="p-2 col-12 col-sm-3 text-center"><img class="img-fluid" src="{% static 'Scanwatch_38_Black_Breath_Selection.png' %}"></div>
+      <div class="p-2 col-12 col-sm-9">
+        <dl class="row align-items-center">
+          <dt class="d-none d-lg-block col-3 {% if device.userid == userid %}pt-2{% endif %}">Device Name</dt>
+          <dt class="d-block d-lg-none col-3 {% if device.userid == userid %}pt-2{% endif %}">Name</dt>
+          <dd class="col-9">
+            {% if device.userid == userid %}
+            <form action="/{{ context_root }}updatedevice/" method="POST">
+              <input type="hidden" name="deviceid" value="{{ device.deviceid }}">
+              <div class="input-group">
+                <input id="friendlyname" name="friendlyname" class="form-control form-control-lg" type="text" value="{{ device.friendlyname }}">
+                <button class="btn btn-outline-secondary" type="submit" id="edit-name-button">Update</button>
+              </div>
+            </form>
+            {% else %}
+            {{ device.friendlyname }}
+            {% endif %}
+          </dd>
+          <dt class="col-3">Model</dt>
+          <dd class="col-9 text-truncate">{{ device.model }}</dd>
+          <dt class="d-none d-lg-block col-3">MAC Address</dt>
+          <dt class="d-block d-lg-none col-3">MAC</dt>
+          <dd class="col-9 text-truncate">{{ device.mac_address }}</dd>
+          <dt class="d-none d-lg-block col-3">Registered UserID</dt>
+          <dt class="d-block d-lg-none col-3">UserID</dt>
+          <dd class="col-9 text-truncate">{{ device.userid }}</dd>
+          <dt class="col-3">DeviceID</dt>
+          <dd class="col-9 text-truncate">{{ device.hash_deviceid }}</dd>
+        </dl>
+        <hr />
+        {% if device.is_running %}
+        <h4>Experiment In Progress</h4>
+        <dl class="row">
+          <dt class="d-none d-lg-block col-3">Experiment</dt>
+          <dt class="d-block d-lg-none col-3">Exp #</dt>
+          <dd class="col-9 text-wrap">{{ device.exp.id }}</dd>
+          <dt class="d-none d-lg-block col-3">Start Time</dt>
+          <dt class="d-block d-lg-none col-3">Start</dt>
+          <dd class="col-9 text-wrap">{{ device.exp.start_time|custom_date|date:"Y/m/d h:i:s A" }}</dd>
+          <dt class="d-none d-lg-block col-3">End Time</dt>
+          <dt class="d-block d-lg-none col-3">End</dt>
+          <dd class="col-9 text-wrap">{{ device.exp.end_time|custom_date|date:"Y/m/d h:i:s A" }}</dd>
+        </dl>
+        {% else %}
+        <h4>Start Experiment</h4>
+        <form action="/{{ context_root }}activate/" method="POST">
+          <input type="hidden" name="userid" value="{{ userid }}"/>
+          <input type="hidden" name="deviceid" value="{{ device.deviceid }}"/>
+          <div class="input-group mb-3">
+            <span class="input-group-text">End Date/Time:</span>
+            <input type="datetime-local" class="form-control" name="endtime" value="{% now 'Y-m-d\TH:i' %}">
+          </div>
+          <button class="btn btn-primary" id="start-btn" type="submit" {% if record.userid != userid %}disabled{% endif %}>
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-right-short"
+              viewBox="0 0 16 16">
+              <path fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8" />
+            </svg>
+            Start
+          </button>
+        </form>
+        {% endif %}
       </div>
-    </form>
-    <span>{{ device.model }} {{ device.mac_address }}</span>
-    <span>Registered to user {{ device.userid }}</span>
+    </div>
   </div>
-  <div class="p-2">f
-    <span>Start Experiment</span>
-    <form action="/{{ context_root }}activate/" method="POST">
-      <input type="hidden" name="userid" value="{{ userid }}"/>
-      <input type="hidden" name="deviceid" value="{{ device.deviceid }}"/>
-      <div class="input-group mb-3">
-        <span class="input-group-text">End Date/Time:</span>
-        <input type="datetime-local" class="form-control" name="endtime" value="{% now 'Y-m-d\TH:i' %}">
-      </div>
-      <button class="btn btn-primary" id="start-btn" type="submit">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-right-short"
-          viewBox="0 0 16 16">
-          <path fill-rule="evenodd"
-            d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8" />
-        </svg>
-        Start
-      </button>
-    </form>
-  </div>
+  {% endfor %}
 </div>
-{% endfor %}
 
 <br />
-<h2>Total Experiments: {{ exp_list|length}} </h2>
+<h3>Total Experiments: {{ exp_list|length}} </h3>
 <p>All times are shown for {{ timezone }} ({{ tz_offset }})</p>
-<table class="table table-hover">
+<table class="table table-hover text-center">
   <thead>
     <th>#</th>
     <th>User ID</th>
@@ -76,19 +112,19 @@ Withings Experiments
   <tbody>
     {% for record in exp_list %}
     <tr>
-      <td>{{ record.id }}</td>
-      <td>{{ record.userid }}</a></td>
-      <td>{{ record.start_time|custom_date|date:"Y/m/d h:i:s A" }}</td>
-      <td>{{ record.end_time|custom_date|date:"Y/m/d h:i:s A" }}</td>
-      <td>{% for d in record.data_files %} <a href="/{{ context_root }}files/{{ d.filename }}">{{ d.filename }}</a> {% endfor %}</td>
-      <td>{% if record.offset == 0 %}
-        <a {% if record.on_going %} class="btn btn-primary disabled" {% else %} class="btn btn-primary" {% endif %}
+      <td class="align-middle">{{ record.id }}</td>
+      <td class="align-middle">{{ record.devicename }}</a></td>
+      <td class="align-middle">{{ record.start_time|custom_date|date:"Y/m/d h:i:s A" }}</td>
+      <td class="align-middle">{{ record.end_time|custom_date|date:"Y/m/d h:i:s A" }}</td>
+      <td class="align-middle">{% for d in record.data_files %} <a href="/{{ context_root }}files/{{ d.filename }}">{{ d.filename }}</a> {% endfor %}</td>
+      <td class="align-middle">{% if record.offset == 0 %}
+        <a  class="btn btn-primary w-100 {% if record.on_going or record.userid != userid %}disabled{% endif %}"
           href="/{{ context_root }}getrawdata/?exp_id={{ record.id }}" role="button">{% if record.on_going %}Running{% else %}Fetch Data{% endif %}</a>
         {% elif record.offset > 0 %}
-        <a class="btn btn-info" href="/{{ context_root }}getrawdata/?exp_id={{ record.id }}&offset={{ record.offset }}"
+        <a class="btn btn-info w-100 {% if record.userid != userid %}disabled{% endif %}" href="/{{ context_root }}getrawdata/?exp_id={{ record.id }}&offset={{ record.offset }}"
           role="button">Fetch More</a>
         {% else %}
-        <a class="btn btn-warning" href="/{{ context_root }}getrawdata/?exp_id={{ record.id }}" role="button">Refetch</a>
+        <a class="btn btn-warning w-100 {% if record.userid != userid %}disabled{% endif %}" href="/{{ context_root }}getrawdata/?exp_id={{ record.id }}" role="button">Refetch</a>
         {% endif %}
       </td>
     </tr>

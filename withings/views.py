@@ -9,6 +9,7 @@ from rest_framework import permissions, viewsets
 from withings.serializers import UserInfoSerializer, DeviceSerializer, ExperimentSerializer, RawdataRecordSerializer
 from withings.models import UserInfo, Device, Experiment, RawdataRecord
 
+import urllib
 import json
 import requests
 import datetime as dt
@@ -27,7 +28,7 @@ redirect_uri = settings.WITHINGS_REDIRECT_URI
 
 
 def is_token_expired(request):
-    if not request.session["access_token"]:
+    if not get_access_token(request):
         return True
     d_now = dt.datetime.now(dt.timezone.utc)
     d_updated = dt.datetime.fromtimestamp(request.session["issued_at"], dt.timezone.utc)
@@ -37,10 +38,10 @@ def is_token_expired(request):
     return abs(d_now - d_updated).seconds > int(expires_in)
 
 def get_userid(request):
-    return request.session["userid"]
+    return request.session.get("userid")
 
 def get_access_token(request):
-    return request.session["access_token"]
+    return request.session.get("access_token")
 
 def get_deviceid(access_token):
     url = 'https://wbsapi.withings.net/v2/user'
@@ -93,7 +94,7 @@ def callback2(request):
     
     users = UserInfo.objects.filter(userid = userid)
     if users.count() <= 0:
-        new_user = UserInfo(**json_body)
+        new_user = UserInfo(userid=userid)
         new_user.save()
     else:
         user = users[0]
@@ -129,6 +130,17 @@ def callback2(request):
             new_device.friendlyname = "Withings Watch #" + str(Device.objects.count() + 1)
 
             new_device.save()
+        else:
+            device = target_devices[0]
+            device.mac_address = d['mac_address']
+            device.type = d['type']
+            device.model = d['model']
+            device.model_id = d['model_id']
+            device.timezone = d['timezone']
+            device.fw = d['fw']
+            device.first_session_date = d['first_session_date']
+            device.last_session_date = d['last_session_date']
+            device.save()
 
     #return JsonResponse(res_json)
     return redirect('/' + context_root + "experiments")
@@ -144,8 +156,9 @@ def update_device(request):
     devices = Device.objects.filter(deviceid=deviceid,userid=userid)
     if devices.count() <= 0:
         return JsonResponse({"error": "no such device associated with userid %s" % userid})
-    devices[0].friendlyname = friendlyname
-    devices[0].save()
+    device = devices[0]
+    device.friendlyname = friendlyname
+    device.save()
     return redirect('/' + context_root + "experiments")
 
 
@@ -384,26 +397,26 @@ def get_heart(request):
     return JsonResponse(res.json())
 
 
-def oauth2(request):
+def get_oauth2_url(request):
     url = 'https://account.withings.com/oauth2_user/authorize2'
     params = {
                 'response_type':'code',
-                # dcp
-                #'client_id':'b007216a30ef05a7460e943097f24a4057c019a5de35af805d2dcedafe406825',
                 'client_id':client_id,
-                # pahplabresearch1
-                #'client_id':'feff00522ffdd5d90227173d55c4487861349473f070a4e52985910cfd878bf0',
-                # south carolina
-                #'client_id':'91eaaa60979afb77a65032a1b6019723351e6c5bde7827eb346de1c63aadb3ae',
                 'scope':'user.info,user.metrics,user.activity,user.rawdata',
                 'redirect_uri':redirect_uri,
-                #'redirect_uri':'https://pahplab.cssm.iastate.edu/withings/callback/',
-                #'redirect_uri':'http://withings.geosketch.art/callback/',
                 'state':'VA'}
     
-    oauth2_url = '%s?%s' % (url,urlencode(params))
-    return redirect(oauth2_url)
+    return '%s?%s' % (url,urlencode(params))
 
+
+def oauth2(request):
+    return redirect(get_oauth2_url(request))
+
+
+def get_logout_url(request):
+    url = 'https://account.withings.com/logout'
+    oauth2url = get_oauth2_url(request)
+    return '%s?%s' % (url,urllib.parse.quote(oauth2url,safe=''))
 
 
 class UserInfoViewSet(viewsets.ModelViewSet):
@@ -426,8 +439,7 @@ class RawdataRecordViewSet(viewsets.ModelViewSet):
     serializer_class = RawdataRecordSerializer
 
 
-from .utils import timestamp2est
-from django.utils import timezone
+from .utils import timestamp2local
 
 
 def withings_experiments(request):
@@ -442,31 +454,55 @@ def withings_experiments(request):
     if is_token_expired(request):
         return oauth2(request)
     
-    devices = Device.objects.filter(userid=userid)
-
+    devices = Device.objects
     exps = Experiment.objects.all().order_by('-created')
 
     now_ts = dt.datetime.now().timestamp()
 
+    device_list = []
+    for device in devices:
+        record = {
+            'id':device.id, 'userid':device.userid, 'deviceid': device.deviceid,
+            'hash_deviceid': device.hash_deviceid, 'model': device.model, 
+            'mac_address': device.mac_address, 'is_running': False, 'exp': None,
+            'friendlyname': device.friendlyname,
+            'first_session_date': str(timestamp2local(device.first_session_date)),
+            'last_session_date': str(timestamp2local(device.last_session_date)),
+        }
+        device_list.append(record)
+
     exp_list = []
     for exp in exps:
-        start_time = timestamp2est(exp.startdate)
-        end_time = timestamp2est(exp.enddate)
+        start_time = timestamp2local(exp.startdate)
+        end_time = timestamp2local(exp.enddate)
 
         data_files = exp.rawdata_records.order_by('created')
 
         on_going = False
-        if exp.enddate > now_ts:
+        if exp.enddate > now_ts and exp.startdate <= now_ts:
             on_going = True
+        
+        exp_devs = devices.filter(hash_deviceid=exp.hash_deviceid)
+        devicename = exp.userid
+        if exp_devs.count() > 0:
+            devicename = exp_devs[0].friendlyname
 
         record = {
             'id':exp.id, 'userid':exp.userid, 'start_time':str(start_time), 'end_time':str(end_time), 
-            'data_files':data_files, 'offset':exp.download_offset, 'on_going':on_going
+            'data_files':data_files, 'offset':exp.download_offset, 'on_going':on_going, 
+            'hash_deviceid': exp.hash_deviceid, 'devicename': devicename
             }
         
         exp_list.append(record)
 
-    timezone_offset = dt.datetime.now(pytz.timezone(settings.TIME_ZONE)).strftime("%Z%z")
-    timezone = settings.TIME_ZONE
+        if on_going:
+            for device in device_list:
+                hash1 = record.get("hash_deviceid")
+                hash2 = device.get("hash_deviceid")
+                if hash2 and hash1 == hash2:
+                    device['is_running'] = True
+                    device['exp'] = record
 
-    return render(request, "withings_experiments.html", {'exp_list': exp_list, 'devices': devices, 'context_root': context_root, 'userid': userid, 'timezone': settings.TIME_ZONE, 'tz_offset': timezone_offset})
+    timezone_offset = dt.datetime.now(pytz.timezone(settings.TIME_ZONE)).strftime("%Z%z")
+
+    return render(request, "withings_experiments.html", {'exp_list': exp_list, 'devices': device_list, 'context_root': context_root, 'userid': userid, 'timezone': settings.TIME_ZONE, 'tz_offset': timezone_offset, 'logout_url': get_logout_url(request)})

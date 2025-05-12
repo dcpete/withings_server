@@ -12,7 +12,7 @@ class UserInfoSerializer(serializers.ModelSerializer):
 class DeviceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Device
-        fields = ['id', 'deviceid', 'hash_deviceid', 'mac_address', 'type', 'model', 'model_id', 'timezone', 'fw', 'userid', 'first_session_date', 'last_session_date', 'updated', 'created']
+        fields = ['id', 'deviceid', 'hash_deviceid', 'mac_address', 'type', 'model', 'model_id', 'timezone', 'fw', 'userid', 'first_session_date', 'last_session_date', 'updated', 'created', 'friendlyname']
 
 class ExperimentSerializer(serializers.ModelSerializer):
     class Meta:

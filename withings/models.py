@@ -57,7 +57,7 @@ class Device(models.Model):
     class Meta:
         unique_together = [('hash_deviceid', 'userid')]
         indexes = [
-            models.Index(fields=['deviceid', 'name', 'mac_address', 'updated', 'created'])
+            models.Index(fields=['deviceid', 'friendlyname', 'mac_address', 'updated', 'created'])
         ]
 
 class Experiment(models.Model):
