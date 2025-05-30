@@ -31,7 +31,7 @@ Withings Experiments
     <div class="row">
       <div class="p-2 col-12 col-sm-3 text-center"><img class="img-fluid" src="{% static 'Scanwatch_38_Black_Breath_Selection.png' %}"></div>
       <div class="p-2 col-12 col-sm-9">
-        <dl class="row align-items-center">
+        <dl class="row">
           <dt class="d-none d-lg-block col-3 {% if device.userid == userid %}pt-2{% endif %}">Device Name</dt>
           <dt class="d-block d-lg-none col-3 {% if device.userid == userid %}pt-2{% endif %}">Name</dt>
           <dd class="col-9">
@@ -39,7 +39,7 @@ Withings Experiments
             <form action="/{{ context_root }}updatedevice/" method="POST">
               <input type="hidden" name="deviceid" value="{{ device.deviceid }}">
               <div class="input-group">
-                <input id="friendlyname" name="friendlyname" class="form-control form-control-lg" type="text" value="{{ device.friendlyname }}">
+                <input id="friendlyname" name="friendlyname" class="form-control" type="text" value="{{ device.friendlyname }}">
                 <button class="btn btn-outline-secondary" type="submit" id="edit-name-button">Update</button>
               </div>
             </form>
@@ -57,6 +57,10 @@ Withings Experiments
           <dd class="col-9 text-truncate">{{ device.userid }}</dd>
           <dt class="col-3">DeviceID</dt>
           <dd class="col-9 text-truncate">{{ device.hash_deviceid }}</dd>
+          <dt class="col-3">First seen</dt>
+          <dd class="col-9 text-truncate">{{ device.first_session_date|custom_date|date:"Y/m/d h:i:s A" }}</dd>
+          <dt class="col-3">Last seen</dt>
+          <dd class="col-9 text-truncate">{{ device.last_session_date|custom_date|date:"Y/m/d h:i:s A" }}</dd>
         </dl>
         <hr />
         {% if device.is_running %}
@@ -73,7 +77,7 @@ Withings Experiments
           <dd class="col-9 text-wrap">{{ device.exp.end_time|custom_date|date:"Y/m/d h:i:s A" }}</dd>
         </dl>
         {% else %}
-        <h4>Start Experiment</h4>
+        <h4>Schedule Experiment</h4>
         <form action="/{{ context_root }}activate/" method="POST">
           <input type="hidden" name="userid" value="{{ userid }}"/>
           <input type="hidden" name="deviceid" value="{{ device.deviceid }}"/>
@@ -81,7 +85,7 @@ Withings Experiments
             <span class="input-group-text">End Date/Time:</span>
             <input type="datetime-local" class="form-control" name="endtime" value="{% now 'Y-m-d\TH:i' %}">
           </div>
-          <button class="btn btn-primary" id="start-btn" type="submit" {% if record.userid != userid %}disabled{% endif %}>
+          <button class="btn btn-primary" id="start-btn" type="submit" {% if device.userid != userid %}disabled{% endif %}>
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-right-short"
               viewBox="0 0 16 16">
               <path fill-rule="evenodd"
@@ -103,7 +107,7 @@ Withings Experiments
 <table class="table table-hover text-center">
   <thead>
     <th>#</th>
-    <th>User ID</th>
+    <th>Device</th>
     <th>Start Time</th>
     <th>End Time</th>
     <th>RawData Files</th>
