@@ -15,6 +15,7 @@ import requests
 import datetime as dt
 from zoneinfo import ZoneInfo
 import pytz
+import urllib.parse
 
 # Create your views here.
 
@@ -61,7 +62,6 @@ def rawdata_activate(access_token, hash_deviceid, data_type, end_ts):
 
     res = requests.post(url, urlencode(params), headers=headers)
     return res
-
 
 
 @csrf_exempt
@@ -213,8 +213,8 @@ def activate(request):
 
     endtime = request.POST.get('endtime')
     et = dt.datetime.strptime(endtime, "%Y-%m-%dT%H:%M")
-    est = et.replace(tzinfo=ZoneInfo(settings.TIME_ZONE))
-    enddate = int(est.timestamp())
+    et_local = et.replace(tzinfo=ZoneInfo(settings.TIME_ZONE))
+    enddate = int(et_local.timestamp())
 
     data_type = 1 # Accelerometer data
 
@@ -327,7 +327,7 @@ def get_rawdata(request):
         offset = 0
 
     access_token = get_access_token(request)
-    if not access_token:
+    if is_token_expired(request):
         return oauth2(request)
     headers = {"Authorization": "Bearer %s" % access_token}
     res = requests.post(url, urlencode(params), headers=headers)    
@@ -454,7 +454,7 @@ def withings_experiments(request):
     if is_token_expired(request):
         return oauth2(request)
     
-    devices = Device.objects
+    devices = Device.objects.all()
     exps = Experiment.objects.all().order_by('-created')
 
     now_ts = dt.datetime.now().timestamp()
