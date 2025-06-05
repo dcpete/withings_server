@@ -18,15 +18,15 @@ Note: A devices can have multiple experiments
 class UserInfo(models.Model):
     userid = models.CharField(unique=True, max_length=32)
 
-    access_token = models.CharField(max_length=64)
-    refresh_token = models.CharField(max_length=64)
-    scope = models.CharField(max_length=256)
-    expires_in = models.IntegerField(default=10800)
-    csrf_token = models.CharField(max_length=64)
-    token_type = models.CharField(max_length=32)
+    access_token = models.CharField(max_length=64, null=True)
+    refresh_token = models.CharField(max_length=64, null=True)
+    scope = models.CharField(max_length=256, null=True)
+    expires_in = models.IntegerField(default=10800, null=True)
+    csrf_token = models.CharField(max_length=64, null=True)
+    token_type = models.CharField(max_length=32, null=True)
 
-    updated = models.DateTimeField()
-    created = models.DateTimeField()
+    updated = models.DateTimeField(null=True)
+    created = models.DateTimeField(null=True)
 
     class Meta:
         indexes = [
