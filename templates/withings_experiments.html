@@ -25,7 +25,7 @@ Withings Experiments
 {% block content %}
 <div class="row">
   <h3 class="col-12 col-sm-8">Devices</h3>
-  <div class="col-12 col-sm-2 btn {% if users.count() <= 0 %}disabled{% endif %}">
+  <div class="col-12 col-sm-2 btn {% if users.count <= 0 %}disabled{% endif %}">
     <a href="/{{ context_root }}getdevices/">Check for new devices</a>
   </div>
   <div class="col-12 col-sm-2 btn">
