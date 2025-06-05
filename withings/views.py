@@ -42,7 +42,7 @@ def is_token_expired(userid):
     required_token_props = [
         'access_token',
         'refresh_token',
-        'issued_at',
+        'updated',
         'expires_in'
     ]
     # if any required prop is missing, then token is invalid (or expired, sure)
@@ -50,12 +50,12 @@ def is_token_expired(userid):
         if not getattr(user, prop):
             return True
 
-    issued_at = user.issued_at
+    issued_at = user.updated
     expires_in = user.expires_in
 
     # get datetime objects for now and issued_at
     d_now = dt.datetime.now(dt.timezone.utc)
-    d_issued = dt.datetime.fromtimestamp(issued_at, dt.timezone.utc)
+    d_issued = issued_at
 
     # calculate expiration times
     access_token_expires_in = int(expires_in)
@@ -106,9 +106,8 @@ def get_refresh_token(userid):
 
 def save_auth_info(response):
     # define auth info to save
-    issued_at = dt.datetime.now(dt.timezone.utc).timestamp()
-    json_props = [
-        'body', 
+    issued_at = dt.datetime.now(dt.timezone.utc).isoformat()
+    json_props = [ 
         'userid', 
         'access_token', 
         'refresh_token', 
@@ -131,16 +130,16 @@ def save_auth_info(response):
         new_user = UserInfo()
         # add the issued_at date for token expiration calculations
         for prop in json_props:
-            setattr(user, prop, json_body[prop])
-        new_user.created = issued_at
-        new_user.updated = issued_at
+            setattr(new_user, prop, json_body[prop])
+        new_user.created = str(issued_at)
+        new_user.updated = str(issued_at)
         new_user.save()
     # Otherwise if a user is found, update it
     else:
         user = users[0]
         for prop in json_props:
             setattr(user, prop, json_body[prop])
-        user.updated = issued_at
+        user.updated = str(issued_at)
         user.save()
 
 
@@ -462,23 +461,24 @@ def get_rawdata(request):
     write2json(jres, file_path, raw_filename)
 
     # save to csv files
-    rawdata = jres['body']['rawdata']
-    dfs = rawdata2dfs(rawdata)
-    for sensor_name in dfs:
-        filename = "%s_%s_%s_%s.csv" % (sensor_name, startdate, enddate, offset)
-        df = dfs[sensor_name]
-        write2csv(df, file_path, filename)
+    if jres.get('body'):
+        rawdata = jres['body']['rawdata']
+        dfs = rawdata2dfs(rawdata)
+        for sensor_name in dfs:
+            filename = "%s_%s_%s_%s.csv" % (sensor_name, startdate, enddate, offset)
+            df = dfs[sensor_name]
+            write2csv(df, file_path, filename)
 
-        # write into FileRecord 
-        rds = RawdataRecord.objects.filter(filename=filename)
-        if rds.count() > 0:
-            rds[0].filename = filename
-            rds[0].save()
-        else:
-            rd = RawdataRecord(exp=exp, filename=filename)
-            rd.save()
+            # write into FileRecord 
+            rds = RawdataRecord.objects.filter(filename=filename)
+            if rds.count() > 0:
+                rds[0].filename = filename
+                rds[0].save()
+            else:
+                rd = RawdataRecord(exp=exp, filename=filename)
+                rd.save()
 
-    if 'offset'in jres['body']:
+    if jres.get('body') and 'offset'in jres['body']:
         offset = jres['body']['offset']
         exp.download_offset = offset
         exp.save()
