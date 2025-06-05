@@ -47,7 +47,7 @@ def is_token_expired(userid):
     ]
     # if any required prop is missing, then token is invalid (or expired, sure)
     for prop in required_token_props:
-        if not user[prop]:
+        if not getattr(user, prop):
             return True
 
     issued_at = user.issued_at
@@ -128,16 +128,19 @@ def save_auth_info(response):
     # if no users are found, make one
     if users.count() <= 0:
         # add the base info from the json response
-        new_user = UserInfo(**json_body)
+        new_user = UserInfo()
         # add the issued_at date for token expiration calculations
-        new_user.issued_at = issued_at
+        for prop in json_props:
+            setattr(user, prop, json_body[prop])
+        new_user.created = issued_at
+        new_user.updated = issued_at
         new_user.save()
     # Otherwise if a user is found, update it
     else:
         user = users[0]
         for prop in json_props:
-            user[prop] = json_body[prop]
-        user.issued_at = issued_at
+            setattr(user, prop, json_body[prop])
+        user.updated = issued_at
         user.save()
 
 
@@ -265,7 +268,7 @@ def update_device(request):
     # update the parameters
     for param in update_params:
         if request.POST.get(param):
-            device[param] = request.POST.get(param)
+            setattr(device, param, request.POST.get(param))
     device.save()
 
     # return to experiments page
