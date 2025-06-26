@@ -10,7 +10,74 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 import os
+import sys
+import zoneinfo
+import tzlocal
 from pathlib import Path
+
+def read_from_file(filepath):
+    if os.path.exists(filepath):
+        try:
+            with open(filepath, 'r') as file:
+                file_content = file.read()
+                print("read from " + filepath)
+                return file_content.strip()
+        except FileNotFoundError:
+            print(f"Error: File not found: {filepath}")
+            return None
+        except Exception as e:
+            print(f"An error occurred: {e}")
+            return None
+    else:
+        return None
+    
+def get_docker_secret(filename):
+    filepath = os.path.join('/run/secrets', filename)
+    return read_from_file(filepath)
+
+def get_local_file(filename):
+    filepath = os.path.join('./', filename)
+    return read_from_file(filepath)
+
+def get_env_var(varname):
+    value = os.environ.get(varname)
+    if value:
+        print("read from environment variable: '" + value + "'")
+        return value
+    return ""
+
+def get_setting(setting, default = ""):
+    print(setting + " ", end="")
+    setting_funcs = [get_env_var, get_local_file, get_docker_secret]
+    for func in setting_funcs:
+        result = func(setting)
+        if result:
+            return result
+    if default:
+        print ("not found, using default value '" + default + "'")
+        return default
+    else:
+        print("not found, no default available")
+        return ""
+
+
+# THESE SETTINGS NOW COME FROM ENVIRONMENT VARIABLES
+WITHINGS_DEBUG = get_setting("WITHINGS_DEBUG", "False")
+WITHINGS_HOSTNAME = get_setting("WITHINGS_HOSTNAME", "localhost")
+WITHINGS_CONTEXT_ROOT = get_setting("WITHINGS_CONTEXT_ROOT", "withings")
+context_root_trailing_slash = WITHINGS_CONTEXT_ROOT + "/" if WITHINGS_CONTEXT_ROOT else ""
+WITHINGS_REDIRECT_URI = get_setting("WITHINGS_REDIRECT_URI", 'https://' + WITHINGS_HOSTNAME + '/' + context_root_trailing_slash + 'callback/')
+WITHINGS_CLIENT_ID = get_setting("WITHINGS_CLIENT_ID")
+WITHINGS_CLIENT_SECRET = get_setting("WITHINGS_CLIENT_SECRET")
+WITHINGS_DJANGO_SECURE_KEY = get_setting("WITHINGS_DJANGO_SECURE_KEY", "django-insecure-please-consider-supplying-a-secure-key-23^%36n4Gdf")
+WITHINGS_TIME_ZONE = get_setting("WITHINGS_TIME_ZONE", tzlocal.get_localzone_name())
+
+if not WITHINGS_HOSTNAME:
+    print("Unable to determine WITHINGS_HOSTNAME, exiting")
+    sys.exit()
+
+debug_check = WITHINGS_DEBUG.lower() if WITHINGS_DEBUG else False
+DEBUG = debug_check == "true" or debug_check == "1" or debug_check == "y"
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,25 +88,21 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = "django-insecure-y2skidy%ng2i^3u7-01-6&nfy(y86p-c!j^9_osn@!%1_^rfy+"
+SECRET_KEY = "django-insecure-please-consider-supplying-a-secure-key-23^%36n4Gdf"
 
-# SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+# Used if deploying to a path, i.e. https://www.example.com/withings would be 'withings'
 
+# Allow https proxy headers
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'pahplab.cssm.iastate.edu', 'pahp.cssm.iastate.edu']
+# Allow hosts, including proxy hosts
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', WITHINGS_HOSTNAME]
 
-CSRF_TRUSTED_ORIGINS = ['https://pahplab.cssm.iastate.edu', 'https://pahplab.cssm.iastate.edu:8000', 'https://127.0.0.1:8000']
-
-CSRF_COOKIE_PATH = '/withings'
-
-WEB_SERVER_DEPLOY_PATH = '/withings'
+CSRF_TRUSTED_ORIGINS = ['https://' + WITHINGS_HOSTNAME, 'http://' + WITHINGS_HOSTNAME + ':8000', 'http://127.0.0.1:8000']
+CSRF_COOKIE_DOMAIN = WITHINGS_HOSTNAME
+CSRF_COOKIE_PATH = '/' + WITHINGS_CONTEXT_ROOT
 
 SECURE_REFERRER_POLICY = "same-origin"
-#SECURE_REFERRER_POLICY = "None"
-#SECURE_CROSS_ORIGIN_OPENER_POLICY = "None"
-#SECURE_CONTENT_TYPE_NOSNIFF = "False"
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -75,6 +138,7 @@ AUTH_USER_MODEL = "accounts.CustomUser" # User CustomUser for authentication
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "django.middleware.locale.LocaleMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     #"django.middleware.csrf.CsrfViewMiddleware",
@@ -110,7 +174,7 @@ WSGI_APPLICATION = "withings_server.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "NAME": BASE_DIR / "db/db.sqlite3",
     }
 }
 
@@ -139,22 +203,22 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = "en-us"
 
-TIME_ZONE = "UTC"
-
 USE_I18N = True
 
 USE_TZ = True
 
+TIME_ZONE = WITHINGS_TIME_ZONE
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = "withings/static/"
+STATIC_URL = context_root_trailing_slash + "static/"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-LOCAL_WITHINGS_DATA_DIR = 'files/withings_data'
+LOCAL_WITHINGS_DATA_DIR = 'files'
 WORKING_WITHINGS_DATA_PATH = os.path.join(BASE_DIR, LOCAL_WITHINGS_DATA_DIR)
+

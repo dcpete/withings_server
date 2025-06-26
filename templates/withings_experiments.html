@@ -1,5 +1,9 @@
 {% extends "base.html" %}
 
+{% load datetime_local %}
+{% now "Y-m-d\TH:i" as current_time %}
+{% load static %}
+
 {% block title %}
 Withings Experiments
 {% endblock%}
@@ -15,36 +19,97 @@ Withings Experiments
 {% endblock %}
 
 {% block heading %}
-<h1 align="center">Withings Experiments</h1>
+<h1 class="py-3">Withings Experiments</h1>
 {% endblock %}
 
 {% block content %}
-<h2>Start a New Experiment</h2>
-<form action="{{ deploy_path }}/activate" method="GET">
-  <div class="input-group mb-3">
-    <span class="input-group-text">User ID:</span>
-    <input type="text" class="form-control" name="userid" />
-
-    <span class="input-group-text">End Date/Time:</span>
-    <input type="datetime-local" class="form-control" name="endtime">
-
-    <button class="btn btn-primary" id="start-btn" type="submit">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-right-short"
-        viewBox="0 0 16 16">
-        <path fill-rule="evenodd"
-          d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8" />
-      </svg>
-      Start
-    </button>
+<div class="row align-items-end">
+  <h3 class="col-12 col-sm-4 col-md-6 col-lg-8">Devices</h3>
+  <div class="col-12 col-sm-4 col-md-3 col-lg-2 mb-2{% if users.count <= 0 %} disabled{% endif %}">
+    <a class="btn btn-primary d-flex justify-content-center" href="/{{ context_root }}getdevices/">Check for new devices</a>
   </div>
-</form>
+  <div class="col-12 col-sm-4 col-md-3 col-lg-2 mb-2">
+    <a class="btn btn-primary d-flex justify-content-center" href="/{{ context_root }}oauth2/">Add Withings Account</a>
+  </div>
+</div>
+<div class="list-group">
+  {% for device in devices %}
+  <div class="list-group-item">
+    <div class="row">
+      <div class="p-2 col-12 col-sm-3 text-center"><img class="img-fluid" src="{% static 'Scanwatch_38_Black_Breath_Selection.png' %}"></div>
+      <div class="p-2 col-12 col-sm-9">
+        <dl class="row">
+          <dt class="d-none d-lg-block col-3 pt-2">Device Name</dt>
+          <dt class="d-block d-lg-none col-3 pt-2">Name</dt>
+          <dd class="col-9">
+            <form action="/{{ context_root }}updatedevice/" method="POST">
+              <input type="hidden" name="deviceid" value="{{ device.deviceid }}">
+              <div class="input-group">
+                <input id="friendlyname" name="friendlyname" class="form-control" type="text" value="{{ device.friendlyname }}">
+                <button class="btn btn-outline-secondary" type="submit" id="edit-name-button">Update</button>
+              </div>
+            </form>
+          </dd>
+          <dt class="col-3">Model</dt>
+          <dd class="col-9 text-truncate">{{ device.model }}</dd>
+          <dt class="d-none d-lg-block col-3">MAC Address</dt>
+          <dt class="d-block d-lg-none col-3">MAC</dt>
+          <dd class="col-9 text-truncate">{{ device.mac_address }}</dd>
+          <dt class="d-none d-lg-block col-3">Registered UserID</dt>
+          <dt class="d-block d-lg-none col-3">UserID</dt>
+          <dd class="col-9 text-truncate">{{ device.userid }}</dd>
+          <dt class="col-3">DeviceID</dt>
+          <dd class="col-9 text-truncate">{{ device.hash_deviceid }}</dd>
+          <dt class="col-3">Registered</dt>
+          <dd class="col-9 text-truncate">{{ device.first_session_date|custom_date|date:"Y/m/d h:i:s A" }}</dd>
+          <dt class="col-3">Last check in</dt>
+          <dd class="col-9 text-truncate">{{ device.last_session_date|custom_date|date:"Y/m/d h:i:s A" }}</dd>
+        </dl>
+        <hr />
+        {% if device.is_running %}
+        <h4>Experiment In Progress</h4>
+        <dl class="row">
+          <dt class="d-none d-lg-block col-3">Experiment</dt>
+          <dt class="d-block d-lg-none col-3">Exp #</dt>
+          <dd class="col-9 text-wrap">{{ device.exp.id }}</dd>
+          <dt class="d-none d-lg-block col-3">Start Time</dt>
+          <dt class="d-block d-lg-none col-3">Start</dt>
+          <dd class="col-9 text-wrap">{{ device.exp.start_time|custom_date|date:"Y/m/d h:i:s A" }}</dd>
+          <dt class="d-none d-lg-block col-3">End Time</dt>
+          <dt class="d-block d-lg-none col-3">End</dt>
+          <dd class="col-9 text-wrap">{{ device.exp.end_time|custom_date|date:"Y/m/d h:i:s A" }}</dd>
+        </dl>
+        {% else %}
+        <h4>Schedule Experiment</h4>
+        <form action="/{{ context_root }}activate/" method="POST">
+          <input type="hidden" name="deviceid" value="{{ device.deviceid }}"/>
+          <div class="input-group mb-3">
+            <span class="input-group-text">End Date/Time:</span>
+            <input type="datetime-local" class="form-control" name="endtime" value="{% now 'Y-m-d\TH:i' %}">
+          </div>
+          <button class="btn btn-primary" id="start-btn" type="submit">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-arrow-right-short"
+              viewBox="0 0 16 16">
+              <path fill-rule="evenodd"
+                d="M4 8a.5.5 0 0 1 .5-.5h5.793L8.146 5.354a.5.5 0 1 1 .708-.708l3 3a.5.5 0 0 1 0 .708l-3 3a.5.5 0 0 1-.708-.708L10.293 8.5H4.5A.5.5 0 0 1 4 8" />
+            </svg>
+            Start
+          </button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
 
 <br />
-<h2>Total Experiments: {{ exp_list|length}} </h2>
-<table class="table table-hover">
+<h3>Total Experiments: {{ exp_list|length}} </h3>
+<p>All times are shown for {{ timezone }} ({{ tz_offset }})</p>
+<table class="table table-hover text-center">
   <thead>
     <th>#</th>
-    <th>User ID</th>
+    <th>Device</th>
     <th>Start Time</th>
     <th>End Time</th>
     <th>RawData Files</th>
@@ -53,19 +118,19 @@ Withings Experiments
   <tbody>
     {% for record in exp_list %}
     <tr>
-      <td>{{ record.id }}</td>
-      <td>{{ record.userid }}</a></td>
-      <td>{{ record.start_time }}</td>
-      <td>{{ record.end_time }}</td>
-      <td>{% for d in record.data_files %} <a href="{{ deploy_path }}/files/{{ d.filename }}">{{ d.filename }}</a> {% endfor %}</td>
-      <td>{% if record.offset == 0 %}
-        <a {% if record.on_going %} class="btn btn-primary disabled" {% else %} class="btn btn-primary" {% endif %}
-          href="{{ deploy_path }}/getrawdata/?exp_id={{ record.id }}" role="button">Fetch RawData</a>
+      <td class="align-middle">{{ record.id }}</td>
+      <td class="align-middle">{{ record.devicename }}</a></td>
+      <td class="align-middle">{{ record.start_time|custom_date|date:"Y/m/d h:i:s A" }}</td>
+      <td class="align-middle">{{ record.end_time|custom_date|date:"Y/m/d h:i:s A" }}</td>
+      <td class="align-middle">{% for d in record.data_files %} <a href="/{{ context_root }}files/{{ d.filename }}">{{ d.filename }}</a> {% endfor %}</td>
+      <td class="align-middle">{% if record.offset == 0 %}
+        <a  class="btn btn-primary w-100 {% if record.on_going %}disabled{% endif %}"
+          href="/{{ context_root }}getrawdata/?exp_id={{ record.id }}" role="button">{% if record.on_going %}Running{% else %}Fetch Data{% endif %}</a>
         {% elif record.offset > 0 %}
-	<a class="btn btn-info" href="{{ deploy_path }}/getrawdata/?exp_id={{ record.id }}&offset={{ record.offset }}"
+        <a class="btn btn-info w-100" href="/{{ context_root }}getrawdata/?exp_id={{ record.id }}&offset={{ record.offset }}"
           role="button">Fetch More</a>
         {% else %}
-	<a class="btn btn-warning" href="{{ deploy_path }}/getrawdata/?exp_id={{ record.id }}" role="button">Refetch</a>
+        <a class="btn btn-warning w-100disabled" href="/{{ context_root }}getrawdata/?exp_id={{ record.id }}" role="button">Refetch</a>
         {% endif %}
       </td>
     </tr>

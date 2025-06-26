@@ -3,17 +3,18 @@ from zoneinfo import ZoneInfo
 
 import pandas as pd
 import json
+import tzlocal
 
 from .datablock import DataBlock
 
-def timestamp2est(timestamp):
+def timestamp2local(timestamp):
     # Convert timestamp to UTC first
     utc_dt = datetime.fromtimestamp(timestamp, tz=timezone.utc)
 
-    # Convert to EST (New York timezone)
-    est_dt = utc_dt.astimezone(ZoneInfo('America/New_York'))
+    # Convert to local timezone
+    local_dt = utc_dt.astimezone(ZoneInfo(tzlocal.get_localzone_name()))
 
-    return est_dt
+    return local_dt
 
 def rawdata2dfs(rawdata):
     dfs = {}

@@ -16,27 +16,26 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-
-from rest_framework import routers
+from django.conf import settings
 
 from withings import views as withingsviews
  
-router = routers.DefaultRouter()
-
-
-router.register(r'userinfo', withingsviews.UserInfoViewSet)
-router.register(r'device', withingsviews.DeviceViewSet)
-router.register(r'experiment', withingsviews.ExperimentViewSet)
-router.register(r'rawdatarecord', withingsviews.RawdataRecordViewSet)
+context_root = settings.WITHINGS_CONTEXT_ROOT + '/'
 
 urlpatterns = [
-    path('withings/', include(router.urls)),
-    path('withings/admin/', admin.site.urls),
-    path('withings/api-auth/', include('rest_framework.urls', namespace='rest_framework')),    
-    path('withings/oauth2/', withingsviews.oauth2),
-    path('withings/callback/', withingsviews.callback2),
-    path('withings/getdevices/', withingsviews.getdevices),
-    path('withings/getrawdata/', withingsviews.get_rawdata),
-    path('withings/activate/', withingsviews.activate),
-    path("withings/experiments/", withingsviews.withings_experiments),
+    #path(context_root, include(router.urls)),
+    path(context_root, withingsviews.withings_experiments),
+    path(context_root + 'userinfo/', withingsviews.UserInfoViewSet.as_view({'get': 'list'}), name='userinfo'),
+    path(context_root + 'device/', withingsviews.DeviceViewSet.as_view({'get': 'list'}), name='device'),
+    path(context_root + 'experiment/', withingsviews.ExperimentViewSet.as_view({'get': 'list'}), name='experiment'),
+    path(context_root + 'rawdatarecord/', withingsviews.RawdataRecordViewSet.as_view({'get': 'list'}), name='rawdatarecord'),
+    path(context_root + 'admin/', admin.site.urls),
+    path(context_root + 'api-auth/', include('rest_framework.urls', namespace='rest_framework')),    
+    path(context_root + 'oauth2/', withingsviews.oauth2),
+    path(context_root + 'callback/', withingsviews.callback2),
+    path(context_root + 'getdevices/', withingsviews.getdevices),
+    path(context_root + 'getrawdata/', withingsviews.get_rawdata),
+    path(context_root + 'activate/', withingsviews.activate),
+    path(context_root + 'experiments/', withingsviews.withings_experiments),
+    path(context_root + 'updatedevice/', withingsviews.update_device),
 ]
