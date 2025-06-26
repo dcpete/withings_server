@@ -42,8 +42,8 @@ def get_local_file(filename):
 def get_env_var(varname):
     value = os.environ.get(varname)
     if value:
-        print("read from environment variable")
-        return os.environ.get(varname)
+        print("read from environment variable: '" + value + "'")
+        return value
     return ""
 
 def get_setting(setting, default = ""):

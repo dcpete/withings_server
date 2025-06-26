@@ -18,19 +18,19 @@ Note: A devices can have multiple experiments
 class UserInfo(models.Model):
     userid = models.CharField(unique=True, max_length=32)
 
-    access_token = models.CharField(max_length=64)
-    refresh_token = models.CharField(max_length=64)
-    scope = models.CharField(max_length=256)
-    expires_in = models.IntegerField(default=600)
-    csrf_token = models.CharField(max_length=64)
-    token_type = models.CharField(max_length=32)
+    access_token = models.CharField(max_length=64, null=True)
+    refresh_token = models.CharField(max_length=64, null=True)
+    scope = models.CharField(max_length=256, null=True)
+    expires_in = models.IntegerField(default=10800, null=True)
+    csrf_token = models.CharField(max_length=64, null=True)
+    token_type = models.CharField(max_length=32, null=True)
 
-    updated = models.DateTimeField(auto_now=True)
-    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(null=True)
+    created = models.DateTimeField(null=True)
 
     class Meta:
         indexes = [
-            models.Index(fields=['access_token', 'updated', 'created'])
+            models.Index(fields=['userid', 'updated', 'created'])
         ]
 
 class Device(models.Model):
@@ -49,13 +49,15 @@ class Device(models.Model):
 
     userid = models.CharField(max_length=32)
 
+    friendlyname=models.CharField(max_length=64)
+
     updated = models.DateTimeField(auto_now=True)
     created = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         unique_together = [('hash_deviceid', 'userid')]
         indexes = [
-            models.Index(fields=['deviceid', 'mac_address', 'updated', 'created'])
+            models.Index(fields=['deviceid', 'friendlyname', 'mac_address', 'updated', 'created'])
         ]
 
 class Experiment(models.Model):
