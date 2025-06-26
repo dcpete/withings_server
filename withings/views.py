@@ -390,7 +390,7 @@ def getdevices(request):
 
                 new_device.save()
 
-    redirect('/' + context_root + "experiments")
+    return redirect('/' + context_root + "experiments")
 
 
 
@@ -638,11 +638,20 @@ def withings_experiments(request):
             'friendlyname': device.friendlyname,
             'first_session_date': str(timestamp2local(device.first_session_date)),
             'last_session_date': str(timestamp2local(device.last_session_date)),
-            # exp is the active experiment if one is active, otherwise None
-            'exp': active_exp,
+            # exp is the active experiment if one is active (set later), otherwise None
+            'exp': None,
             # is_running should be set to True if an active experiment is running
             'is_running': bool(active_exp), 
         }
+        if active_exp:
+            record['exp'] = {
+                'id':active_exp.id, 
+                'userid':active_exp.userid, 
+                'start_time':str(timestamp2local(active_exp.startdate)), 
+                'end_time':str(timestamp2local(active_exp.enddate)), 
+                'offset':active_exp.download_offset, 
+                'hash_deviceid': active_exp.hash_deviceid, 
+            }
         device_list.append(record)
 
     # get all experiments registered in the local database

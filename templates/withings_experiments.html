@@ -23,13 +23,13 @@ Withings Experiments
 {% endblock %}
 
 {% block content %}
-<div class="row">
-  <h3 class="col-12 col-sm-8">Devices</h3>
-  <div class="col-12 col-sm-2 {% if users.count <= 0 %}disabled{% endif %}">
-    <a class="btn btn-primary" href="/{{ context_root }}getdevices/">Check for new devices</a>
+<div class="row align-items-end">
+  <h3 class="col-12 col-sm-4 col-md-6 col-lg-8">Devices</h3>
+  <div class="col-12 col-sm-4 col-md-3 col-lg-2 mb-2{% if users.count <= 0 %} disabled{% endif %}">
+    <a class="btn btn-primary d-flex justify-content-center" href="/{{ context_root }}getdevices/">Check for new devices</a>
   </div>
-  <div class="col-12 col-sm-2 btn">
-    <a class="btn btn-primary" href="/{{ context_root }}oauth2/">Add a Withings Account</a>
+  <div class="col-12 col-sm-4 col-md-3 col-lg-2 mb-2">
+    <a class="btn btn-primary d-flex justify-content-center" href="/{{ context_root }}oauth2/">Add Withings Account</a>
   </div>
 </div>
 <div class="list-group">
@@ -60,9 +60,9 @@ Withings Experiments
           <dd class="col-9 text-truncate">{{ device.userid }}</dd>
           <dt class="col-3">DeviceID</dt>
           <dd class="col-9 text-truncate">{{ device.hash_deviceid }}</dd>
-          <dt class="col-3">First seen</dt>
+          <dt class="col-3">Registered</dt>
           <dd class="col-9 text-truncate">{{ device.first_session_date|custom_date|date:"Y/m/d h:i:s A" }}</dd>
-          <dt class="col-3">Last seen</dt>
+          <dt class="col-3">Last check in</dt>
           <dd class="col-9 text-truncate">{{ device.last_session_date|custom_date|date:"Y/m/d h:i:s A" }}</dd>
         </dl>
         <hr />

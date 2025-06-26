@@ -5,8 +5,8 @@ from withings.models import UserInfo, Device, Experiment, RawdataRecord
 class UserInfoSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserInfo
-        #fields = ['id', 'userid', 'access_token', 'refresh_token', 'scope', 'expires_in', 'csrf_token', 'token_type', 'updated', 'created']
-        fields = ['id', 'userid', 'updated', 'created']
+        fields = ['id', 'userid', 'access_token', 'refresh_token', 'scope', 'expires_in', 'csrf_token', 'token_type', 'updated', 'created']
+        #fields = ['id', 'userid', 'updated', 'created']
 
 
 class DeviceSerializer(serializers.ModelSerializer):
