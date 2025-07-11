@@ -1,11 +1,11 @@
 # Withings Experiment Server
 
-The Withings Experiment Server is an instance of Django that is designed to manage experiments for Withings devices. Currently, it is set up to track accelerometer data. When Research Mode is activated on the device via the rawdata API from Withings, the device starts recording telemetry at 25Hz. Once the experiment concludes, the data is uploaded from the device to the Withings servers and is available for download.
+The Withings Experiment Server is an instance of Django that is designed to manage activity tracking experiments for Withings devices. The Withings Scanwatch model was used in developing and testing the web app server. The device is equipped with a triaxial accelerometer with a dynamic range of ±4g and a possible sampling rate of up to 100 Hz (with 25 Hz as a default rate). 
 
-This server application provides an easy way to start experiments and fetch experiment data from the Withings servers.
+Collecting and extracting epoch level data with the Withings trackers require advanced setup and API integration. This process involves the use of the tracker (Withings watch), Withings phone app, and Server. This document details how the server application enables starting, tracking, and fetching activity tracking experiments from the Withings servers.
 
 ## Getting started with Withings
-If I'm being honest, it's a little unclear to me how one is supposed to do this properly.
+Collecting epoch data with Withings trackers requires activating the research mode on the device (watch) via the rawdata API from Withings. The following steps explain the activation process.   
 
 ### Create an account with access to the Advanced Research API
 [Create an account with Withings](https://developer.withings.com/dashboard). The account is free, and all accounts have access to the developer dashboard. 
@@ -15,7 +15,7 @@ Enter your email address, and a verification code will be sent to it.
 ### Create an application in the Developer Dashboard
 From the developer dashbaord, click "Create an Application." Choose the Public API, and agree to the terms of use.
 
-Choose an application name, and provide a valid callback URI. This URI must be publically accessible from Withings Servers. A callback endpoint is provided with this server, but feel free to use a different application for this if so desired.
+Choose an application name, and provide a valid callback URL. This URL must be publically accessible from Withings Servers. A callback endpoint is provided with this server, but feel free to use a different application for this if so desired.
 
 Take note of the Client ID and Client Secret. You will need to supply these to the server application.
 
@@ -87,8 +87,16 @@ If executing from the command line
 
 Access the server at https://`WITHINGS_HOSTNAME`/`WITHINGS_CONTEXT_ROOT`. For the example service definition above, this would be https://foo.cssm.iastate.edu/withings since the default `WITHINGS_CONTEXT_ROOT` of "withings" was used.
 
-You will be prompted to authenticate with Withings (if you are not currently in a session) and then you will be prompted to authorize the application to manage your devices. Grant access, and you should be redirected to the experiments page.
+Setting up an experiment on the server
 
-Start an experiment by setting the date and click "Run Experiment." The experiment will begin immediately and run until the specified end date.
+You will be prompted to authenticate Withings through the phone app (if you are not currently in a session) and then you will be prompted to authorize the application to manage your devices. Grant access, and you should be redirected to the experiments page.
 
-When an experiment is completed, click on Fetch Data. Once fetched, a link to the file will be provided for download.
+On the experiment page, start an experiment by setting the date and click “Run Experiment.” The experiment will begin and run until the specified time range. Note that extended experiments (>24 hours at a default rate of 25 Hz) are likely to drain the battery and therefore, not finish. Thus, it is recommended to keep the experiment at a maximum of 24 hours.  
+
+When an experiment is completed, click on Fetch Data. Once fetched, a link to the file will be provided for download. The waiting time before data is made available for download is currently unknown but estimated to be between (immediately- 24 hours). 
+
+Download and save the data locally 
+
+Start a new experiment. 
+
+
